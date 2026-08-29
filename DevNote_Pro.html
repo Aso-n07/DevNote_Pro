@@ -818,6 +818,11 @@
       .panel { width: 100% !important; display: none; }
       .panel.mobile-active { display: flex; }
     }
+/* Universal Monospace Font Rule to Force Real Backslash (\) Rendering on Korean Windows */
+input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .note-textarea, .code-editor-box, .console-out, #note-preview-box {
+  font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace !important;
+}
+
 </style>
 </head>
 <body>
@@ -1079,6 +1084,20 @@
   </div>
 
   <script>
+
+    // Global auto-conversion from Korean Won (₩) to Backslash (\) for all inputs & textareas
+    document.addEventListener("input", (e) => {
+      const el = e.target;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && el.value && el.value.includes('₩')) {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        el.value = el.value.replace(/₩/g, '\\');
+        if (start !== null && end !== null) {
+          try { el.setSelectionRange(start, end); } catch (err) {}
+        }
+      }
+    });
+
 // HTML Escaping Utility
     function escapeHTML(str) {
       if (!str) return "";

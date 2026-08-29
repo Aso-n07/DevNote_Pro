@@ -803,3 +803,7 @@
       .panel { width: 100% !important; display: none; }
       .panel.mobile-active { display: flex; }
     }
+/* Universal Monospace Font Rule to Force Real Backslash (\) Rendering on Korean Windows */
+input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .note-textarea, .code-editor-box, .console-out, #note-preview-box {
+  font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace !important;
+}

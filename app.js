@@ -1,3 +1,17 @@
+
+    // Global auto-conversion from Korean Won (₩) to Backslash (\) for all inputs & textareas
+    document.addEventListener("input", (e) => {
+      const el = e.target;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && el.value && el.value.includes('₩')) {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        el.value = el.value.replace(/₩/g, '\\');
+        if (start !== null && end !== null) {
+          try { el.setSelectionRange(start, end); } catch (err) {}
+        }
+      }
+    });
+
 // HTML Escaping Utility
     function escapeHTML(str) {
       if (!str) return "";
