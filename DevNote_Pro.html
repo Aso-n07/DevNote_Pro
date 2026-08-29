@@ -549,7 +549,7 @@
       text-align: center;
     }
     .page-divider::after {
-      content: '📄 다음 페이지 분할 영역 (###)';
+      content: '📄 다음 페이지 넘김 분할 (###)';
       position: absolute;
       top: -11px;
       left: 50%;
@@ -1091,7 +1091,7 @@
         .replace(/'/g, "&#039;");
     }
 
-    // Custom Note Command Parser (###, +++, ===)
+    // Custom Note Command Parser for Web Preview (#, ## without symbols)
     function parseNoteMarkdown(rawText) {
       if (!rawText) return "";
       let text = rawText;
@@ -1109,7 +1109,7 @@
       // 3. Process ### Page Dividers
       text = text.replace(/^\s*###\s*$/gm, '<div class="page-divider"></div>');
 
-      // 4. Headings & Markdown Formatting
+      // 4. Headings & Markdown Formatting (Excluding # and ## symbols in title text)
       const lines = text.split('\n');
       let html = '';
       let inList = false;
@@ -1133,6 +1133,57 @@
         } else {
           if (inList) { html += '</ul>'; inList = false; }
           html += `<p style="margin:4px 0;">${escapeHTML(line)}</p>`;
+        }
+      });
+      if (inList) html += '</ul>';
+      return html;
+    }
+
+    // Custom Note Parser Specifically Optimized for PDF Export
+    // - Removes # and ## symbols
+    // - Unified black text (#000000) for all headings, text, and list items
+    // - ### forces page break (starts on brand new page)
+    function parseNoteMarkdownForPDF(rawText) {
+      if (!rawText) return "";
+      let text = rawText;
+
+      // 1. Process +++ ... +++ Green Highlight Blocks for PDF (Black text, light gray background)
+      text = text.replace(/^\s*\+\+\+\s*\n([\s\S]*?)\n\s*\+\+\+/gm, (match, p1) => {
+        return `<div style="background:#f1f5f9; color:#000000; border-left:4px solid #22c55e; padding:12px 16px; border-radius:6px; margin:14px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(p1)}</div>`;
+      });
+
+      // 2. Process === ... === Purple Highlight Blocks for PDF (Black text, light gray background)
+      text = text.replace(/^\s*===\s*\n([\s\S]*?)\n\s*===/gm, (match, p1) => {
+        return `<div style="background:#f1f5f9; color:#000000; border-left:4px solid #6366f1; padding:12px 16px; border-radius:6px; margin:14px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(p1)}</div>`;
+      });
+
+      // 3. Process ### Page Break for PDF (Forces Next Page)
+      text = text.replace(/^\s*###\s*$/gm, '<div class="html2pdf__page-break" style="page-break-before: always; break-before: page; height: 0; margin: 0; padding: 0;"></div>');
+
+      // 4. Headings & Markdown Formatting (Excluding # / ## symbols, pure black text)
+      const lines = text.split('\n');
+      let html = '';
+      let inList = false;
+
+      lines.forEach(line => {
+        if (line.includes('html2pdf__page-break') || line.includes('background:#f1f5f9;')) {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += line;
+        } else if (line.startsWith('# ')) {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += `<h1 style="font-size:1.6rem; font-weight:800; color:#000000; margin:18px 0 10px 0; border-bottom:2px solid #000000; padding-bottom:6px;">${escapeHTML(line.substring(2))}</h1>`;
+        } else if (line.startsWith('## ')) {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += `<h2 style="font-size:1.25rem; font-weight:700; color:#000000; margin:14px 0 8px 0;">${escapeHTML(line.substring(3))}</h2>`;
+        } else if (line.startsWith('- ')) {
+          if (!inList) { html += '<ul style="padding-left:22px; margin:8px 0; color:#000000;">'; inList = true; }
+          html += `<li style="color:#000000; font-size:1rem; margin-bottom:4px;">${escapeHTML(line.substring(2))}</li>`;
+        } else if (line.trim() === '') {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += '<br/>';
+        } else {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += `<p style="margin:4px 0; color:#000000; font-size:1rem; line-height:1.6;">${escapeHTML(line)}</p>`;
         }
       });
       if (inList) html += '</ul>';
@@ -1768,26 +1819,40 @@
     }
 
     // Export PDF & ZIP
+    // PDF Customization Rules:
+    // 1. Removes '#' and '##' symbols from title/heading text
+    // 2. All text colors unified to pure black (#000000)
+    // 3. '###' forces page break to start on a brand new page
     function exportToPDF() {
       const sub = subjectList.find(s => s.id === currentSubject);
       const noteContent = document.getElementById("note-input").value;
       const element = document.createElement("div");
-      element.style.padding = "20px";
-      element.style.color = "#000";
+      element.style.padding = "25px";
+      element.style.color = "#000000";
+      element.style.backgroundColor = "#ffffff";
+      element.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
       element.innerHTML = `
-        <h1 style="font-size:1.5rem; margin-bottom:10px;">DevNote - ${sub ? escapeHTML(sub.name) : '학습노트'}</h1>
-        <hr style="margin-bottom:15px;"/>
-        <div>${parseNoteMarkdown(noteContent)}</div>
+        <div style="font-size:1.6rem; font-weight:800; color:#000000; margin-bottom:14px; border-bottom:3px solid #000000; padding-bottom:8px;">
+          DevNote - ${sub ? escapeHTML(sub.name) : '학습노트'}
+        </div>
+        <div>${parseNoteMarkdownForPDF(noteContent)}</div>
       `;
+
       const opt = {
-        margin: 10,
+        margin: [10, 10, 10, 10],
         filename: `${sub ? sub.name : '학습노트'}_DevNote.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas: { scale: 2, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
       };
-      if (window.html2pdf) html2pdf().set(opt).from(element).save();
-      else alert("PDF 라이브러리를 로드할 수 없습니다.");
+
+      if (window.html2pdf) {
+        html2pdf().set(opt).from(element).save();
+      } else {
+        alert("PDF 라이브러리를 로드할 수 없습니다.");
+      }
     }
 
     function exportCurrentMarkdownFile() {
