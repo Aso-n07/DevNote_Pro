@@ -1090,7 +1090,6 @@
     }
 
     // Custom Note Command Parser for Web Preview (#, ## without symbols)
-    // Placeholder token extraction guarantees 100% clean closing of highlight divs!
     function parseNoteMarkdown(rawText) {
       if (!rawText) return "";
       let text = rawText;
@@ -1155,11 +1154,10 @@
       return html;
     }
 
-    // Custom Note Parser Specifically Optimized for PDF Export
-    // Placeholder token extraction guarantees 100% clean closing of highlight divs!
-    function parseNoteMarkdownForPDF(rawText) {
-      if (!rawText) return "";
-      let text = rawText;
+    // Helper for rendering a single PDF page section
+    function parseSinglePagePDFMarkdown(pageText) {
+      if (!pageText) return "";
+      let text = pageText;
 
       const greenBlocks = [];
       const purpleBlocks = [];
@@ -1178,9 +1176,6 @@
         return `\n___HIGHLIGHT_PURPLE_${idx}___\n`;
       });
 
-      // Extract ### page dividers
-      text = text.replace(/^\s*###\s*$/gm, '\n___PAGE_DIVIDER___\n');
-
       const lines = text.split('\n');
       let html = '';
       let inList = false;
@@ -1197,12 +1192,9 @@
           const idx = parseInt(trimmed.replace('___HIGHLIGHT_PURPLE_', '').replace('___', ''));
           const innerText = purpleBlocks[idx] || '';
           html += `<div style="background:#f3e8ff; border-left:5px solid #9333ea; padding:12px 16px; border-radius:6px; margin:14px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(innerText)}</div>`;
-        } else if (trimmed === '___PAGE_DIVIDER___') {
-          if (inList) { html += '</ul>'; inList = false; }
-          html += '<div class="html2pdf__page-break" style="page-break-before: always; break-before: page; margin: 0; padding: 0;"></div><div style="height: 25px; min-height: 25px;"></div>';
         } else if (line.startsWith('# ')) {
           if (inList) { html += '</ul>'; inList = false; }
-          html += `<h1 style="font-size:1.6rem; font-weight:800; color:#000000; margin:18px 0 10px 0; border-bottom:2px solid #000000; padding-bottom:6px;">${escapeHTML(line.substring(2))}</h1>`;
+          html += `<h1 style="font-size:1.6rem; font-weight:800; color:#000000; margin:14px 0 10px 0; border-bottom:2px solid #000000; padding-bottom:6px;">${escapeHTML(line.substring(2))}</h1>`;
         } else if (line.startsWith('## ')) {
           if (inList) { html += '</ul>'; inList = false; }
           html += `<h2 style="font-size:1.25rem; font-weight:700; color:#000000; margin:14px 0 8px 0;">${escapeHTML(line.substring(3))}</h2>`;
@@ -1219,6 +1211,29 @@
       });
       if (inList) html += '</ul>';
       return html;
+    }
+
+    // Custom Note Parser Specifically Optimized for PDF Export
+    // Splits note text by '###' lines into separate page blocks.
+    // Each page block starts at the VERY TOP of its respective page in the generated PDF!
+    function parseNoteMarkdownForPDF(rawText) {
+      if (!rawText) return "";
+      const pageChunks = rawText.split(/^\s*###\s*$/gm);
+      
+      let fullHtml = '';
+      pageChunks.forEach((chunk, index) => {
+        const isLastPage = (index === pageChunks.length - 1);
+        const pageHtml = parseSinglePagePDFMarkdown(chunk);
+        const pageBreakCSS = isLastPage ? "" : "page-break-after: always; break-after: page;";
+        
+        fullHtml += `
+          <div class="pdf-page-block" style="${pageBreakCSS} box-sizing:border-box; margin:0; padding:0;">
+            ${pageHtml}
+          </div>
+        `;
+      });
+
+      return fullHtml;
     }
 
     // Supabase Configuration
@@ -1854,7 +1869,7 @@
       const sub = subjectList.find(s => s.id === currentSubject);
       const noteContent = document.getElementById("note-input").value;
       const element = document.createElement("div");
-      element.style.padding = "25px";
+      element.style.padding = "20px";
       element.style.color = "#000000";
       element.style.backgroundColor = "#ffffff";
       element.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
@@ -1870,9 +1885,9 @@
         margin: [10, 10, 10, 10],
         filename: `${sub ? sub.name : '학습노트'}_DevNote.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, logging: false },
+        html2canvas: { scale: 2, logging: false, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        pagebreak: { mode: ['css', 'legacy'], after: '.pdf-page-block' }
       };
 
       if (window.html2pdf) {
