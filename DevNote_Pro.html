@@ -7,6 +7,10 @@
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
   <style>
     :root {
@@ -21,7 +25,7 @@
       --accent: #38bdf8;
       --danger: #ef4444;
       --success: #22c55e;
-      --sidebar-width: 300px;
+      --sidebar-width: 320px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -38,14 +42,14 @@
       position: relative;
     }
 
-    /* Top Header - Super Clean Layout */
+    /* Top Header */
     header {
       background-color: var(--bg-panel);
       border-bottom: 1px solid var(--border-color);
-      padding: 8px 10px;
+      padding: 8px 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
       position: relative;
       z-index: 10;
@@ -60,7 +64,7 @@
     .brand-group {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .menu-toggle-btn {
@@ -75,142 +79,436 @@
     }
 
     .brand {
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 700;
       color: var(--text-main);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
     .brand i { color: var(--primary); }
 
+    .header-right-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .header-status-badge {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       background: rgba(15, 23, 42, 0.6);
-      padding: 4px 8px;
-      border-radius: 4px;
+      padding: 5px 10px;
+      border-radius: 6px;
       border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
+
+    .auth-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .auth-btn:hover { background: var(--primary-hover); }
+    .auth-btn.logout { background: #475569; }
+    .auth-btn.logout:hover { background: var(--danger); }
 
     .subject-nav-wrapper {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       overflow-x: auto;
       scrollbar-width: none;
       padding-bottom: 2px;
     }
     .subject-nav-wrapper::-webkit-scrollbar { display: none; }
 
-    .subject-nav {
-      display: flex;
-      gap: 5px;
-    }
-
-    .nav-btn {
-      background: var(--bg-card);
+    .subject-tab {
+      background: var(--bg-main);
       border: 1px solid var(--border-color);
       color: var(--text-muted);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.78rem;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
       white-space: nowrap;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
-      touch-action: manipulation;
+      gap: 6px;
+      transition: all 0.2s;
     }
-    .nav-btn.active {
-      background-color: var(--primary);
-      border-color: var(--primary);
+    .subject-tab.active {
+      background: var(--primary);
       color: #fff;
+      border-color: var(--primary);
       font-weight: 600;
     }
 
-    .nav-add-btn {
-      background-color: rgba(99, 102, 241, 0.25);
-      border: 1px dashed var(--primary);
+    .add-subject-btn {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px dashed var(--accent);
       color: var(--accent);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.78rem;
-      white-space: nowrap;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
       cursor: pointer;
-      touch-action: manipulation;
+      white-space: nowrap;
     }
 
-    /* Sidebar Drawer & Overlay */
-    .sidebar-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 998;
-      display: none;
+    /* Main Container Layout */
+    .main-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
     }
-    .sidebar-overlay.open { display: block; }
 
-    .sidebar {
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
-      width: var(--sidebar-width);
-      max-width: 88vw;
-      background-color: #0b1329;
-      border-right: 1px solid var(--border-color);
-      z-index: 999;
-      transform: translateX(-100%);
-      transition: transform 0.22s ease-out;
+    .panel {
       display: flex;
       flex-direction: column;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+      height: 100%;
+      overflow: hidden;
     }
-    .sidebar.open { transform: translateX(0); }
 
-    .sidebar-header {
-      padding: 14px 16px;
+    /* Left Panel: Dictionary */
+    .panel-dict {
+      width: 320px;
+      border-right: 1px solid var(--border-color);
       background-color: var(--bg-panel);
+      flex-shrink: 0;
+    }
+
+    .panel-header {
+      padding: 12px 14px;
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: rgba(15, 23, 42, 0.4);
     }
-    .sidebar-header h3 {
-      font-size: 0.95rem;
-      color: var(--accent);
+    .panel-title {
+      font-size: 0.9rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
+      gap: 8px;
+    }
+
+    .search-box {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .search-input:focus { outline: 1px solid var(--accent); }
+
+    .card-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dict-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .dict-card:hover { border-color: var(--accent); }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .card-actions {
+      display: flex;
       gap: 6px;
     }
-    .sidebar-close-btn {
+    .card-action-btn {
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 1.3rem;
       cursor: pointer;
-      padding: 4px 8px;
-      touch-action: manipulation;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+    }
+    .card-action-btn:hover { color: var(--text-main); }
+    .card-action-btn.delete:hover { color: var(--danger); }
+
+    .card-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
     }
 
-    .sidebar-body {
+    .code-snippet {
+      background: var(--bg-main);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #38bdf8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Middle Panel: Interactive Note */
+    .panel-note {
       flex: 1;
-      overflow-y: auto;
-      padding: 14px;
+      border-right: 1px solid var(--border-color);
+      background-color: var(--bg-main);
+    }
+
+    .note-editor-wrapper {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      padding: 14px;
+      gap: 10px;
     }
 
-    .sidebar-section-title {
+    .note-textarea {
+      flex: 1;
+      width: 100%;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 14px;
+      font-family: monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      resize: none;
+    }
+    .note-textarea:focus { outline: 1px solid var(--primary); }
+
+    .toolbar-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 10px;
+      border-radius: 4px;
       font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .tool-btn:hover { background: var(--border-color); }
+
+    /* Right Panel: Runner */
+    .panel-runner {
+      width: 380px;
+      background-color: var(--bg-panel);
+      flex-shrink: 0;
     }
 
-    /* ????�??? ???? �???*/
+    .runner-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .code-editor-box {
+      height: 220px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: #f8fafc;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      resize: none;
+      width: 100%;
+    }
+
+    .preview-box {
+      flex: 1;
+      min-height: 200px;
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      overflow: auto;
+    }
+
+    .preview-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #ffffff;
+      border-radius: 4px;
+    }
+
+    .console-out {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #38bdf8;
+      white-space: pre-wrap;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      width: 90%;
+      max-width: 440px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 6px;
+    }
+    .modal-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .modal-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .form-input {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+    }
+    .btn-secondary { background: var(--bg-card); color: var(--text-main); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    /* Sidebar Drawer */
+    .sidebar-drawer {
+      position: fixed;
+      top: 0; left: -340px;
+      width: var(--sidebar-width);
+      height: 100%;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-color);
+      z-index: 900;
+      transition: left 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+      box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    }
+    .sidebar-drawer.active { left: 0; }
+    .sidebar-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 899;
+      display: none;
+    }
+    .sidebar-overlay.active { display: block; }
+
     .path-setting-card {
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid var(--border-color);
@@ -241,7 +539,7 @@
       font-size: 0.72rem;
       line-height: 1.5;
       color: #cbd5e1;
-      max-height: 140px;
+      max-height: 160px;
       overflow-y: auto;
       white-space: pre;
     }
@@ -249,12 +547,10 @@
     .sidebar-btn-group {
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 8px;
     }
-
     .sidebar-btn {
-      width: 100%;
-      background-color: var(--bg-panel);
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
       color: var(--text-main);
       padding: 10px 12px;
@@ -264,368 +560,36 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
-      touch-action: manipulation;
+      gap: 10px;
     }
-    .sidebar-btn:active { background-color: var(--primary); }
-    .sidebar-btn i { width: 16px; text-align: center; color: var(--accent); }
-
-    .sidebar-btn.primary-action {
-      background-color: #312e81;
-      border-color: #6366f1;
-    }
-    .sidebar-btn.pdf-action {
-      background-color: #064e3b;
-      border-color: #059669;
-    }
-
-    .sidebar-hint {
-      font-size: 0.68rem;
-      color: #94a3b8;
-      line-height: 1.35;
-      margin-top: 2px;
-    }
+    .sidebar-btn:hover { background: var(--border-color); }
+    .sidebar-btn i { width: 16px; color: var(--accent); }
 
     /* Mobile Tab Bar */
     .mobile-tab-bar {
-      display: flex;
-      background-color: var(--bg-panel);
+      display: none;
+      background: var(--bg-panel);
       border-bottom: 1px solid var(--border-color);
-      width: 100%;
-      flex-shrink: 0;
-      z-index: 10;
     }
-
     .tab-item {
       flex: 1;
+      padding: 10px;
       text-align: center;
-      padding: 11px 0;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
       cursor: pointer;
-      border-bottom: 3px solid transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      touch-action: manipulation;
     }
-
     .tab-item.active {
       color: var(--accent);
-      border-color: var(--accent);
       font-weight: bold;
-      background-color: rgba(56, 189, 248, 0.08);
+      border-bottom: 2px solid var(--accent);
     }
 
-    /* Main Panels */
-    main {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .panel {
-      flex: 1;
-      display: none;
-      flex-direction: column;
-      background-color: var(--bg-panel);
-      border-right: 1px solid var(--border-color);
-      min-width: 0;
-      height: 100%;
-      position: relative;
-    }
-    .panel.active-panel { display: flex; }
-
-    .panel-header {
-      padding: 8px 10px;
-      background-color: rgba(15, 23, 42, 0.6);
-      border-bottom: 1px solid var(--border-color);
-      font-size: 0.8rem;
-      font-weight: 600;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .panel-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-      position: relative;
-    }
-
-    .search-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .search-box {
-      flex: 1;
-      padding: 8px 10px;
-      background-color: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      color: var(--text-main);
-      font-size: 0.82rem;
-    }
-
-    .cheat-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 9px 10px;
-      margin-bottom: 8px;
-      position: relative;
-    }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-
-    .card-title {
-      font-weight: bold;
-      color: var(--accent);
-      font-size: 0.84rem;
-    }
-
-    .card-ctrls { display: flex; gap: 4px; }
-
-    .card-btn {
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.78rem;
-      padding: 4px 7px;
-      border-radius: 4px;
-      touch-action: manipulation;
-    }
-    .card-btn:active { color: #fff; background: var(--primary); }
-    .card-btn.del:active { background: var(--danger); color: #fff; }
-
-    .cheat-card .desc {
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      line-height: 1.35;
-    }
-
-    .cheat-card code {
-      display: block;
-      background-color: var(--bg-main);
-      border: 1px solid rgba(255,255,255,0.05);
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 0.74rem;
-      color: #e2e8f0;
-      font-family: monospace;
-      overflow-x: auto;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-
-    .note-wrapper {
-      position: relative;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .note-editor {
-      flex: 1;
-      width: 100%;
-      background: transparent;
-      border: none;
-      color: var(--text-main);
-      font-size: 0.88rem;
-      line-height: 1.6;
-      resize: none;
-      outline: none;
-      font-family: inherit;
-    }
-
-    .autocomplete-popup {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      max-height: 160px;
-      background-color: #0b1329;
-      border: 1px solid var(--accent);
-      border-radius: 6px;
-      overflow-y: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-      display: none;
-      z-index: 50;
-    }
-
-    .hint-item {
-      padding: 8px 10px;
-      border-bottom: 1px solid #1e293b;
-      font-size: 0.75rem;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      touch-action: manipulation;
-    }
-    .hint-item:hover, .hint-item.selected {
-      background-color: rgba(99, 102, 241, 0.25);
-    }
-    .hint-keyword { font-weight: bold; color: var(--accent); }
-    .hint-desc { color: var(--text-muted); font-size: 0.7rem; }
-
-    .code-area {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      gap: 8px;
-    }
-
-    .code-editor {
-      flex: 1;
-      width: 100%;
-      background-color: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      color: #38bdf8;
-      font-family: monospace;
-      font-size: 0.82rem;
-      padding: 8px;
-      outline: none;
-      resize: none;
-      white-space: pre;
-    }
-
-    .output-container {
-      flex: 1;
-      background-color: #050811;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .output-header {
-      background-color: #0b0f19;
-      padding: 5px 8px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      border-bottom: 1px solid #1e293b;
-    }
-
-    .output-body {
-      flex: 1;
-      padding: 8px;
-      font-family: monospace;
-      font-size: 0.76rem;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      color: #a7f3d0;
-    }
-
-    iframe#web-preview {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background-color: #ffffff;
-    }
-
-    .diagram-view {
-      width: 100%;
-      height: 100%;
-      background-color: var(--bg-main);
-      padding: 8px;
-      overflow: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 0.76rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      touch-action: manipulation;
-      white-space: nowrap;
-    }
-    .btn:active { opacity: 0.85; }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.75);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 14px;
-    }
-    .modal {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 16px;
-      width: 100%;
-      max-width: 440px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    .modal h3 { font-size: 0.95rem; margin-bottom: 12px; color: var(--accent); }
-    .form-group { margin-bottom: 10px; }
-    .form-group label { display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; }
-    .form-control {
-      width: 100%;
-      padding: 8px 10px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      color: #fff;
-      font-size: 0.8rem;
-    }
-    .form-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 3px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; }
-
-    /* PDF ?????�???? ?????(Page-break �??? */
-    #pdf-render-area {
-      display: none;
-      background: #ffffff;
-      color: #1e293b;
-      padding: 24px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
-    }
-    #pdf-render-area h1 { font-size: 18pt; border-bottom: 2px solid #4f46e5; padding-bottom: 6px; margin-bottom: 12px; color: #1e1b4b; }
-    #pdf-render-area h2 { font-size: 14pt; margin-top: 14px; margin-bottom: 6px; color: #312e81; }
-    #pdf-render-area h3 { font-size: 11pt; margin-top: 10px; margin-bottom: 4px; color: #4338ca; }
-    #pdf-render-area pre { background: #0f172a; color: #f8fafc; padding: 10px; border-radius: 4px; font-size: 9pt; }
-    #pdf-render-area code { background: #e2e8f0; color: #0f172a; padding: 2px 4px; border-radius: 3px; font-size: 9pt; font-family: monospace; }
-    #pdf-render-area .pdf-page-break {
-      page-break-before: always;
-      break-before: page;
-      height: 0;
-      margin: 0;
-      border: none;
-    }
-
-    @media (min-width: 851px) {
-      .mobile-tab-bar { display: none !important; }
-      .panel { display: flex !important; }
-      .panel:nth-child(1) { flex: 0.9; }
-      .panel:nth-child(2) { flex: 1.1; }
-      .panel:nth-child(3) { flex: 1.1; }
+    @media (max-width: 900px) {
+      .mobile-tab-bar { display: flex; }
+      .main-container { flex-direction: column; }
+      .panel { width: 100% !important; display: none; }
+      .panel.mobile-active { display: flex; }
     }
   </style>
 </head>
@@ -635,1048 +599,683 @@
   <header>
     <div class="header-top">
       <div class="brand-group">
-        <button type="button" class="menu-toggle-btn" id="btn-open-sidebar" title="???????? ???��">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <div class="brand">
-          <i class="fa-solid fa-code"></i> DevNote Pro
+        <button id="btn-open-sidebar" class="menu-toggle-btn" title="사이드바 메뉴"><i class="fa-solid fa-bars"></i></button>
+        <div class="brand"><i class="fa-solid fa-book-bookmark"></i> DevNote Pro</div>
+      </div>
+      <div class="header-right-group">
+        <div id="save-status" class="header-status-badge">
+          <i class="fa-solid fa-cloud"></i> 준비됨
+        </div>
+        <div id="auth-status-container">
+          <!-- Auth buttons rendered dynamically -->
         </div>
       </div>
-      <div class="header-status-badge" id="save-status">
-        <i class="fa-solid fa-cloud"></i> ??? ???��?
-      </div>
     </div>
-    
-    <div class="subject-nav-wrapper">
-      <div class="subject-nav" id="subject-nav"></div>
-      <button type="button" class="nav-add-btn" id="btn-open-subject-modal" title="???��????�목 ????">
-        <i class="fa-solid fa-plus"></i> ??�목 ????
-      </button>
+    <div class="subject-nav-wrapper" id="subject-nav">
+      <!-- Subject tabs rendered dynamically -->
     </div>
   </header>
 
-  <!-- Sidebar Overlay & Drawer -->
-  <div class="sidebar-overlay" id="sidebar-overlay"></div>
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h3><i class="fa-solid fa-folder-tree"></i> ????????????& ??�??/h3>
-      <button type="button" class="sidebar-close-btn" id="btn-close-sidebar"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="sidebar-body">
-      
-      <!-- 1. ?��?? ????& PDF ?????-->
-      <div>
-        <div class="sidebar-section-title">????��?? ????�????????��</div>
-        <div class="sidebar-btn-group">
-          <button type="button" class="sidebar-btn primary-action" id="btn-save-data">
-            <i class="fa-solid fa-floppy-disk"></i> ?????????????? �??? ????          </button>
-          <button type="button" class="sidebar-btn pdf-action" id="btn-export-pdf">
-            <i class="fa-solid fa-file-pdf"></i> ?????��?? PDF ????? ?????          </button>
-        </div>
-      </div>
-
-      <!-- 2. ????�??? ???? -->
-      <div>
-        <div class="sidebar-section-title">?? �???????�??? (Target Path)</div>
-        <div class="path-setting-card">
-          <span class="path-label">??�????????�??? ????? �???:</span>
-          <input type="text" class="path-input" id="target-save-path" value="??????????????????? />
-          <div class="sidebar-hint">?? �??? �?????????????�??????????????�??? ????? 층�??�???????? ??????????</div>
-        </div>
-      </div>
-
-      <!-- 3. ???????�� ?��?? ???-->
-      <div>
-        <div class="sidebar-section-title">?? ????????????????????????�� ?��??</div>
-        <div class="tree-view" id="library-tree-view"></div>
-      </div>
-
-      <!-- 4. �???�??? ??????????-->
-      <div>
-        <div class="sidebar-section-title">???�???�??? ??????????& ????/div>
-        <div class="sidebar-btn-group">
-          <div>
-            <button type="button" class="sidebar-btn" id="btn-export-current-md" style="background-color: #1e3a8a; border-color: #3b82f6;">
-              <i class="fa-solid fa-file-lines"></i> ??????�목 �????????.md) ?????????�????            </button>
-            <div class="sidebar-hint">????????? ????? ??�목???��??/???????????�??? .md ?????�????��??????.</div>
-          </div>
-          <div>
-            <button type="button" class="sidebar-btn" id="btn-export-zip">
-              <i class="fa-solid fa-file-zipper"></i> ???? 4???�� ????? ZIP ????�? ????�????            </button>
-            <div class="sidebar-hint">??????�??? ????? ????��?? �????????? ??�목????? ??????????</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. 백�??�?�???? -->
-      <div>
-        <div class="sidebar-section-title">????? �????�?백�??�?�???? (????PC)</div>
-        <div class="sidebar-btn-group">
-          <button type="button" class="sidebar-btn" id="btn-export-json">
-            <i class="fa-solid fa-download"></i> ???? JSON ?��????백�??          </button>
-          <button type="button" class="sidebar-btn" id="btn-import-json-trigger">
-            <i class="fa-solid fa-upload"></i> 백�???????�???? (.json)
-          </button>
-          <input type="file" id="import-file-input" style="display: none;" accept=".json" />
-        </div>
-      </div>
-
-    </div>
-  </aside>
-
-  <!-- Mobile Tab Bar (320px) -->
+  <!-- Mobile Tab Bar -->
   <div class="mobile-tab-bar">
-    <div class="tab-item active" id="tab-btn-dict"><i class="fa-solid fa-book"></i> ????/div>
-    <div class="tab-item" id="tab-btn-note"><i class="fa-solid fa-pen-to-square"></i> ?��??</div>
-    <div class="tab-item" id="tab-btn-runner"><i class="fa-solid fa-play"></i> ????/?????/div>
+    <div class="tab-item active" id="tab-btn-dict"><i class="fa-solid fa-book"></i> 사전</div>
+    <div class="tab-item" id="tab-btn-note"><i class="fa-solid fa-pen-to-square"></i> 노트</div>
+    <div class="tab-item" id="tab-btn-runner"><i class="fa-solid fa-play"></i> 실습실</div>
   </div>
 
-  <!-- Main Panels -->
-  <main>
-    <!-- ???? 1: ????-->
-    <section class="panel active-panel" id="panel-dict">
+  <!-- Main 3-Column Layout -->
+  <div class="main-container">
+    <!-- Panel 1: Dictionary & Cards -->
+    <div class="panel panel-dict mobile-active" id="panel-dict">
       <div class="panel-header">
-        <span><i class="fa-solid fa-list-check"></i> �????/�?????????/span>
-        <button type="button" class="btn" id="btn-open-card-modal"><i class="fa-solid fa-plus"></i> 카�??????</button>
+        <div class="panel-title"><i class="fa-solid fa-list-check" style="color:var(--accent);"></i> 핵심 기능 사전</div>
+        <button class="tool-btn" id="btn-open-card-modal"><i class="fa-solid fa-plus"></i> 카드리뷰</button>
       </div>
-      <div class="panel-content">
-        <div class="search-row">
-          <input type="text" class="search-box" id="search-input" placeholder="�????? ????, ????�????(\a, \n ?? �???.." />
-        </div>
-        <div id="cheat-list"></div>
+      <div class="search-box">
+        <input type="text" id="search-input" class="search-input" placeholder="기능, 키워드 검색..." />
       </div>
-    </section>
+      <div class="card-list" id="card-list">
+        <!-- Cards rendered dynamically -->
+      </div>
+    </div>
 
-    <!-- ???? 2: ??????��?? -->
-    <section class="panel" id="panel-note">
+    <!-- Panel 2: Note Editor -->
+    <div class="panel panel-note" id="panel-note">
       <div class="panel-header">
-        <span><i class="fa-solid fa-file-pen"></i> ???????????��??</span>
-        <span style="font-size: 0.7rem; color: var(--accent);"><i class="fa-solid fa-pencil"></i> ????�???�� ??/span>
-      </div>
-      <div class="panel-content" style="padding: 10px;">
-        <div class="note-wrapper">
-          <textarea class="note-editor" id="note-input" placeholder="?��??????????????(# ?????, �????? '###' ???????????PDF ?????�? ????)..."></textarea>
-          <div class="autocomplete-popup" id="autocomplete-popup"></div>
+        <div class="panel-title"><i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 인터랙티브 학습 노트</div>
+        <div style="display:flex; gap:6px;">
+          <button class="tool-btn" id="btn-export-pdf"><i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> PDF 추출</button>
+          <button class="tool-btn" id="btn-save-data" style="background:var(--primary); color:#fff;"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
         </div>
       </div>
-    </section>
-
-    <!-- ???? 3: ???? ?????????-->
-    <section class="panel" id="panel-runner">
-      <div class="panel-header">
-        <span id="runner-title"><i class="fa-solid fa-terminal"></i> ???? ?????????/span>
-        <button type="button" class="btn" id="btn-run-code">
-          <i class="fa-solid fa-play"></i> ????
-        </button>
+      <div class="note-editor-wrapper">
+        <div class="toolbar-row" id="markdown-toolbar">
+          <button class="tool-btn" data-insert="###\n">### 구분선</button>
+          <button class="tool-btn" data-insert="# ">H1</button>
+          <button class="tool-btn" data-insert="## ">H2</button>
+          <button class="tool-btn" data-insert="- ">목록</button>
+          <button class="tool-btn" data-insert="```\n\n```">코드블록</button>
+          <button class="tool-btn" data-insert="**강조**">강조</button>
+        </div>
+        <textarea id="note-input" class="note-textarea" placeholder="여기에 마크다운 학습 노트를 작성하세요..."></textarea>
       </div>
-      <div class="panel-content" style="padding: 10px;">
-        <div class="code-area">
-          <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
-          
-          <div class="output-container" id="output-wrapper">
-            <div class="output-header">???? / ???????????/div>
-            <div class="output-body" id="console-output">???? 결�????? ????????????????</div>
-            <iframe id="web-preview" style="display: none;"></iframe>
-            <div class="diagram-view" id="diagram-view" style="display: none;"></div>
-          </div>
+    </div>
+
+    <!-- Panel 3: Code Runner & Visualizer -->
+    <div class="panel panel-runner" id="panel-runner">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-terminal" style="color:var(--success);"></i> 코드 실행 & 시각화</div>
+        <button class="tool-btn" id="btn-run-code" style="background:var(--success); color:#fff;"><i class="fa-solid fa-play"></i> 실행</button>
+      </div>
+      <div class="runner-body">
+        <textarea id="code-editor" class="code-editor-box" placeholder="실행할 코드를 입력하세요..."></textarea>
+        <div class="preview-box">
+          <iframe id="web-preview" class="preview-frame" style="display:none;"></iframe>
+          <div id="diagram-view" style="display:none;"></div>
+          <pre id="console-output" class="console-out">결과가 여기에 표시됩니다...</pre>
         </div>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
-  <!-- ??�목 ???? �??? -->
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span><i class="fa-solid fa-user-lock" style="color:var(--primary);"></i> 사용자 인증</span>
+        <button class="card-action-btn" id="btn-close-auth-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-tabs">
+        <div class="modal-tab active" id="tab-auth-login">로그인</div>
+        <div class="modal-tab" id="tab-auth-signup">회원가입</div>
+      </div>
+      
+      <!-- Login Form -->
+      <div id="form-auth-login" class="form-group">
+        <div class="form-group">
+          <label class="form-label">이메일 주소</label>
+          <input type="email" id="login-email" class="form-input" placeholder="name@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" />
+        </div>
+        <div id="auth-error-msg" style="color:var(--danger); font-size:0.78rem; display:none;"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="btn-cancel-auth">취소</button>
+          <button class="btn btn-primary" id="btn-do-login">로그인</button>
+        </div>
+      </div>
+
+      <!-- Signup Form -->
+      <div id="form-auth-signup" class="form-group" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">이메일 주소</label>
+          <input type="email" id="signup-email" class="form-input" placeholder="name@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호</label>
+          <input type="password" id="signup-password" class="form-input" placeholder="최소 6자 이상" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">비밀번호 확인</label>
+          <input type="password" id="signup-password-confirm" class="form-input" placeholder="비밀번호 재입력" />
+        </div>
+        <div id="signup-error-msg" style="color:var(--danger); font-size:0.78rem; display:none;"></div>
+        <div id="signup-success-msg" style="color:var(--success); font-size:0.78rem; display:none;"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="btn-cancel-signup">취소</button>
+          <button class="btn btn-primary" id="btn-do-signup">회원가입</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Subject Modal -->
   <div class="modal-overlay" id="subject-modal">
-    <div class="modal">
-      <h3>???��??/ ??�목 ????</h3>
+    <div class="modal-card">
+      <div class="modal-title">새 과목 추가</div>
       <div class="form-group">
-        <label>??�목�?(?? C++, Rust, SQL, OS)</label>
-        <input type="text" class="form-control" id="new-sub-name" placeholder="??�목 ????? />
+        <label class="form-label">과목 이름</label>
+        <input type="text" id="new-subject-name" class="form-input" placeholder="예: React.js, TypeScript" />
       </div>
       <div class="form-group">
-        <label>???�� 카�???????? ????</label>
-        <select class="form-control" id="new-sub-category">
-          <option value="01_??�????(Web_Frontend)">??? 01. ??�????(Web Frontend)</option>
-          <option value="02_????�????�??��??(Languages)">???02. ????�????�??��??(Languages)</option>
-          <option value="03_????_�?AI_(Applied_Tech)">???03. ???? �?AI (Applied Tech)</option>
-          <option value="04_CS_????_(Computer_Science)">???04. CS ???? (Computer Science)</option>
-          <option value="05_??????????_??�목" selected>?? 05. �??? / ???? ??�목</option>
+        <label class="form-label">카테고리</label>
+        <select id="new-subject-category" class="form-input">
+          <option value="01_웹_프론트엔드(Web_Frontend)">01_웹_프론트엔드</option>
+          <option value="02_프로그래밍_언어(Languages)">02_프로그래밍_언어</option>
+          <option value="03_응용_및_AI_(Applied_Tech)">03_응용_및_AI</option>
+          <option value="04_컴퓨터공학_기초(CS_Fundamentals)">04_컴퓨터공학_기초</option>
+          <option value="05_사용자_추가_과목">05_사용자_추가_과목</option>
         </select>
       </div>
       <div class="form-group">
-        <label>?????????????(FontAwesome)</label>
-        <input type="text" class="form-control" id="new-sub-icon" value="fa-solid fa-code" placeholder="fa-solid fa-code, fa-database ?? />
-      </div>
-      <div class="form-group">
-        <label>?????????�??? ??? (???? �??????</label>
-        <select class="form-control" id="new-sub-mode">
-          <option value="memo">??????? �?��/?????�??? [????: C, C++, Java, Rust, Go]</option>
-          <option value="web">??? ????��???�??? [????: HTML5, CSS3, JavaScript, UI ?????</option>
-          <option value="diagram">??????????��??�??? [????: ?????????, ?????리�? ?????? DB ????]</option>
-          <option value="python">????????????????��? ???? �??? [????: Python, ??��??????, ?????]</option>
+        <label class="form-label">실습실 타입</label>
+        <select id="new-subject-runner" class="form-input">
+          <option value="web">웹 프리뷰 (HTML/CSS/JS)</option>
+          <option value="python">파이썬 인터프리터 (Pyodide)</option>
+          <option value="diagram">Mermaid 다이어그램</option>
         </select>
       </div>
-      <div class="modal-actions">
-        <button type="button" class="btn" style="background: #475569;" id="btn-cancel-subject">??????/button>
-        <button type="button" class="btn" id="btn-create-subject">????</button>
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="btn-cancel-subject">취소</button>
+        <button class="btn btn-primary" id="btn-create-subject">과목 생성</button>
       </div>
     </div>
   </div>
 
-  <!-- ????카�??????/????? �??? -->
+  <!-- Add Dictionary Card Modal -->
   <div class="modal-overlay" id="card-modal">
-    <div class="modal">
-      <h3 id="modal-title">�?????�???? 카�??????</h3>
-      <input type="hidden" id="edit-card-index" value="-1" />
+    <div class="modal-card">
+      <div class="modal-title" id="card-modal-title">사전 카드 추가</div>
       <div class="form-group">
-        <label>�?????/ ????? / ?��????????</label>
-        <input type="text" class="form-control" id="modal-name" placeholder="?? \a (�?????, list.append(), OSI 7???��" />
+        <label class="form-label">기능 / 개념 이름</label>
+        <input type="text" id="card-name-input" class="form-input" placeholder="예: querySelector()" />
       </div>
       <div class="form-group">
-        <label>???? (????�????/????? ????)</label>
-        <input type="text" class="form-control" id="modal-desc" placeholder="?? ????�????: �?????Alert/Bell)??�???????? />
+        <label class="form-label">설명</label>
+        <textarea id="card-desc-input" class="form-input" style="height:60px; resize:none;" placeholder="핵심 설명 및 용도..."></textarea>
       </div>
       <div class="form-group">
-        <label>????????? / ??�문</label>
-        <textarea class="form-control" id="modal-code" style="height: 60px; font-family: monospace;" placeholder="??????????????????????></textarea>
+        <label class="form-label">예제 코드</label>
+        <textarea id="card-code-input" class="form-input" style="height:80px; font-family:monospace; resize:none;" placeholder="const el = document.querySelector('.item');"></textarea>
       </div>
-      <div class="modal-actions">
-        <button type="button" class="btn" style="background: #475569;" id="btn-cancel-card">??????/button>
-        <button type="button" class="btn" id="btn-save-card">????/button>
+      <div class="btn-group">
+        <button class="btn btn-secondary" id="btn-cancel-card">취소</button>
+        <button class="btn btn-primary" id="btn-save-card">저장</button>
       </div>
     </div>
   </div>
 
-  <div id="pdf-render-area"></div>
+  <!-- Sidebar Drawer -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <div class="sidebar-drawer" id="sidebar-drawer">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:1rem; font-weight:700;"><i class="fa-solid fa-folder-tree" style="color:var(--accent);"></i> 라이브러리 설정</h3>
+      <button class="card-action-btn" id="btn-close-sidebar"><i class="fa-solid fa-xmark" style="font-size:1.1rem;"></i></button>
+    </div>
 
-  <!-- Dynamic Safe Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <div class="path-setting-card">
+      <div class="path-label">기본 내보내기 타겟 경로</div>
+      <input type="text" id="target-save-path" class="path-input" value="내_학습_라이브러리" />
+    </div>
+
+    <div class="sidebar-section-title" style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">내보내기 파일 구조 미리보기</div>
+    <div class="tree-view" id="library-tree-view"></div>
+
+    <div class="sidebar-btn-group">
+      <button class="sidebar-btn" id="btn-export-current-md"><i class="fa-solid fa-file-code"></i> 현재 과목 .md 추출</button>
+      <button class="sidebar-btn" id="btn-export-zip"><i class="fa-solid fa-file-zipper"></i> 전체 계층 폴더 .zip 추출</button>
+      <button class="sidebar-btn" id="btn-export-json"><i class="fa-solid fa-download"></i> 전체 백업 데이터 (JSON)</button>
+      <button class="sidebar-btn" id="btn-import-json-trigger"><i class="fa-solid fa-upload"></i> 백업 데이터 복원 (JSON)</button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none;" />
+    </div>
+  </div>
 
   <script>
-    const initialSubjectList = [
-      { id: "html", name: "HTML5", category: "01_??�????(Web_Frontend)", icon: "fa-brands fa-html5", runnerType: "web" },
-      { id: "css", name: "CSS3", category: "01_??�????(Web_Frontend)", icon: "fa-brands fa-css3-alt", runnerType: "web" },
-      { id: "js", name: "JavaScript", category: "01_??�????(Web_Frontend)", icon: "fa-brands fa-js", runnerType: "web" },
-      { id: "python", name: "Python", category: "02_????�????�??��??(Languages)", icon: "fa-brands fa-python", runnerType: "python" },
-      { id: "java", name: "Java", category: "02_????�????�??��??(Languages)", icon: "fa-brands fa-java", runnerType: "memo" },
-      { id: "c", name: "C ?��??, category: "02_????�????�??��??(Languages)", icon: "fa-solid fa-c", runnerType: "memo" },
-      { id: "ml", name: "??��??????", category: "03_????_�?AI_(Applied_Tech)", icon: "fa-solid fa-brain", runnerType: "python" },
-      { id: "network", name: "?????????", category: "04_CS_????_(Computer_Science)", icon: "fa-solid fa-network-wired", runnerType: "diagram" },
-      { id: "datastructure", name: "???구�?? & ?????리�?", category: "04_CS_????_(Computer_Science)", icon: "fa-solid fa-cubes", runnerType: "memo" }
+    // Supabase Configuration
+    const SUPABASE_URL = "https://bxbihhulzbpdxdijphil.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4YmloaHVsemJwZHhkaWpwaGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NzA5NTcsImV4cCI6MjEwMzU0Njk1N30.k1BsY6_XgXwnWjG6gpYmuPG5uNPSJFFRFr6TH1yfpYE";
+    let supabaseClient = null;
+    let currentUser = null;
+
+    if (window.supabase) {
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (err) {
+        console.error("Supabase Init Error:", err);
+      }
+    }
+
+    // Default Initial Subjects & Cards Data
+    const defaultSubjectList = [
+      { id: "sub_html5", name: "01_HTML5", category: "01_웹_프론트엔드(Web_Frontend)", runnerType: "web" },
+      { id: "sub_css3", name: "02_CSS3", category: "01_웹_프론트엔드(Web_Frontend)", runnerType: "web" },
+      { id: "sub_js", name: "03_JavaScript", category: "01_웹_프론트엔드(Web_Frontend)", runnerType: "web" },
+      { id: "sub_python", name: "01_Python_기초", category: "02_프로그래밍_언어(Languages)", runnerType: "python" },
+      { id: "sub_c", name: "02_C언어_입문", category: "02_프로그래밍_언어(Languages)", runnerType: "web" },
+      { id: "sub_java", name: "03_Java_기초", category: "02_프로그래밍_언어(Languages)", runnerType: "web" },
+      { id: "sub_ml", name: "01_머신러닝_입문", category: "03_응용_및_AI_(Applied_Tech)", runnerType: "python" },
+      { id: "sub_cs", name: "01_컴퓨터구조_네트워크", category: "04_컴퓨터공학_기초(CS_Fundamentals)", runnerType: "diagram" },
+      { id: "sub_ds", name: "02_자료구조_알고리즘", category: "04_컴퓨터공학_기초(CS_Fundamentals)", runnerType: "web" }
     ];
 
-    const initialSubjectData = {
-      html: {
-        title: "HTML5",
-        defaultNote: "# HTML5 ??�?????��??\n- ???????????: `<header>`, `<main>`, `<article>`, `<section>`\n- ??????�?�??��???? ????? ??��????,
-        defaultCode: "<!DOCTYPE html>\n<html>\n<body>\n  <h1>HTML5 ?????�???????/h1>\n  <p>????????��??????????????��??.</p>\n</body>\n</html>",
+    const defaultAppData = {
+      sub_html5: {
+        title: "HTML5 학습",
+        defaultNote: "# HTML5 웹 시맨틱 태그 노트\n- `<header>`, `<nav>`, `<main>`, `<footer>`로 구조화합니다.\n\n###\n\n# 2페이지: 입력 폼 요소\n- `<input type=\"email\">` 및 `<form>` 검증 활용",
+        defaultCode: "<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; }\n    h1 { color: #38bdf8; }\n  </style>\n</head>\n<body>\n  <h1>Hello HTML5!</h1>\n  <p>DevNote Pro 웹 실습 공간입니다.</p>\n</body>\n</html>",
         cards: [
-          { name: "<header>, <main>, <footer>", desc: "???????????��??????? ??????????", code: "<header>??? ????</header>" },
-          { name: "<form> & <input>", desc: "????????????�???? ???? ?????", code: "<input type='text' placeholder='?????>" }
+          { name: "<header>", desc: "페이지 또는 섹션의 헤더 영역 정의", code: "<header>\n  <h1>로고</h1>\n</header>" },
+          { name: "<main>", desc: "문서의 주요 핵심 콘텐츠 영역", code: "<main>\n  <article>내용</article>\n</main>" }
         ]
       },
-      css: {
-        title: "CSS3",
-        defaultNote: "# CSS3 ??????? ?��??\n- Flexbox: 1차�? ?????????????\n- Grid: 2차�? �??????????????\n- �?????미�???????�� (`@media`)",
-        defaultCode: "<!DOCTYPE html>\n<html>\n<head>\n<style>\n  .box { display: flex; justify-content: center; align-items: center; height: 100px; background: #6366f1; color: white; border-radius: 8px; }\n</style>\n</head>\n<body>\n  <div class='box'>Flexbox Center</div>\n</body>\n</html>",
+      sub_js: {
+        title: "JavaScript 학습",
+        defaultNote: "# JavaScript ES6+ 핵심 요약\n- `const`와 `let` 블록 스코프\n- 화살표 함수 및 구조 분해 할당\n\n###\n\n# 2페이지: 비동기 처리\n- `async/await` 및 `Promise` 문법",
+        defaultCode: "const items = ['HTML', 'CSS', 'JavaScript'];\nitems.forEach((item, index) => {\n  console.log(`${index + 1}. ${item}`);\n});",
         cards: [
-          { name: "display: flex;", desc: "??��????�?Flex ??????????�?�???, code: "display: flex; justify-content: center;" },
-          { name: "@media (max-width: 768px)", desc: "�?????�???????????????", code: "@media (max-width: 768px) { font-size: 14px; }" }
+          { name: "Array.map()", desc: "배열의 각 요소를 변환하여 새 배열 반환", code: "const doubled = [1, 2, 3].map(n => n * 2);" },
+          { name: "fetch()", desc: "비동기 네트워크 HTTP 요청 수행", code: "const res = await fetch(url);\nconst data = await res.json();" }
         ]
       },
-      js: {
-        title: "JavaScript",
-        defaultNote: "# JavaScript ????? ?��??\n- ES6+ ?????? const/let, ?????????, ???????Promise/async-await\n- DOM API?????????��???????????,
-        defaultCode: "<!DOCTYPE html>\n<html>\n<body>\n  <button id='btn'>?????</button>\n  <script>\n    document.getElementById('btn').addEventListener('click', () => alert('JS ?????!'));\n  <\/script>\n</body>\n</html>",
+      sub_python: {
+        title: "Python 학습",
+        defaultNote: "# Python 리스트 및 딕셔너리\n- 리스트 컴프리핸션 활용법\n\n###\n\n# 2페이지: 함수 정의\n- `def` 키워드 및 가변 인자",
+        defaultCode: "fruits = ['사과', '바나나', '체리']\nfruits.append('포도')\nfor i, f in enumerate(fruits, 1):\n    print(f'{i}: {f}')",
         cards: [
-          { name: "addEventListener()", desc: "DOM ????????????��????��?", code: "el.addEventListener('click', () => {});" },
-          { name: "fetch() / async await", desc: "?????? ???????HTTP ?????", code: "const res = await fetch(url);" }
-        ]
-      },
-      c: {
-        title: "C ?��??,
-        defaultNote: "# C ?��??????? ??��\n- ????�????(?????케??????????????백�??????(\\)?? ?????????�????????????\n- \\a: �?????�???\n- \\n: �??�? \\t: ??�?��",
-        defaultCode: "#include <stdio.h>\n\nint main() {\n    printf(\"\\a�?????Alert) �???!\\n\");\n    printf(\"?????\t?????\\n???????\t20\\n\");\n    return 0;\n}",
-        cards: [
-          { name: "\\a (Alert)", desc: "????�????: �?????????????????)??�??????????????케???????????", code: "printf(\"\\a\");" },
-          { name: "\\n (Newline)", desc: "????�????: ????????????????�???????????? (�??�?", code: "printf(\"\\n\");" },
-          { name: "\\t (Tab)", desc: "????�????: ???? ?????? �?�� ???)", code: "printf(\"\\t\");" },
-          { name: "printf()", desc: "????? �????(%d, %f, %s ???????????????? ?????????", code: "printf(\"%d\\n\", val);" },
-          { name: "?????(*, &)", desc: "&??�??????�?��??�???�?�????????? *??�???�???���?????�??? ????", code: "int *p = &var;" },
-          { name: "malloc() / free()", desc: "????????????�?��??��? ????????????????? ????", code: "int *arr = (int*)malloc(sizeof(int)*4);\nfree(arr);" }
-        ]
-      },
-      python: {
-        title: "Python",
-        defaultNote: "# Python ???�� ?��??\n- Python????��???�??????�???? ????????��\n- `append()`????��???????? ???�??????\n\n###\n\n# 2?????�?: ???????????��??\n- ?????�? ????? �?????'###' ????? ????,
-        defaultCode: "fruits = ['????, '�????]\nfruits.append('???')\nfor i, f in enumerate(fruits, 1):\n    print(f'{i}: {f}')",
-        cards: [
-          { name: "print()", desc: "????????결�???????, code: "print('Hello')" },
-          { name: "list.append(x)", desc: "??��???�?????? ????????", code: "arr.append('item')" },
-          { name: "len(s)", desc: "�??????�????/????�????", code: "length = len(arr)" },
-          { name: "range(n)", desc: "???? ???????????", code: "for i in range(5):\n    pass" }
-        ]
-      },
-      java: {
-        title: "Java",
-        defaultNote: "# Java �????�???n- ??????? ???? ?????? ?��????????,
-        defaultCode: "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello Java!\");\n    }\n}",
-        cards: [
-          { name: "System.out.println()", desc: "???? ?????? ?????, code: "System.out.println(\"?????");" },
-          { name: "ArrayList", desc: "?????배�?????????, code: "List<String> list = new ArrayList<>();" }
-        ]
-      },
-      ml: {
-        title: "??��??????",
-        defaultNote: "# ??��?????? �????n- ?��???��?? �???�???????n- ????? ???? �?�?????????,
-        defaultCode: "data = [1.5, 2.7, 3.2, 4.8]\nmean = sum(data)/len(data)\nprint(f'?????: {mean:.2f}')",
-        cards: [
-          { name: "NumPy Array", desc: "N차�? ???????배�??, code: "import numpy as np\narr = np.array([1, 2, 3])" },
-          { name: "Train/Test Split", desc: "?��???��?? ?????, code: "X_train, X_test, y_train, y_test = train_test_split(X, y)" }
-        ]
-      },
-      network: {
-        title: "?????????",
-        defaultNote: "# ????????? ????\n- TCP 3-Way Handshake\n- HTTP ??? ????",
-        defaultCode: "sequenceDiagram\n    autonumber\n    Client->>Server: SYN\n    Server->>Client: SYN + ACK\n    Client->>Server: ACK",
-        cards: [
-          { name: "TCP 3-Way Handshake", desc: "?�결 ?????3????", code: "SYN -> SYN-ACK -> ACK" },
-          { name: "HTTP 200 OK", desc: "???? ?��????? ????", code: "Status: 200 OK" }
-        ]
-      },
-      datastructure: {
-        title: "???구�?? & ?????리�?",
-        defaultNote: "# ???구�?? & ?????리�?\n- ???? �??????Big-O ???���?n- ????(LIFO)????FIFO), ???? ??? ?��??",
-        defaultCode: "// ???? ??��???????\nlet stack = [];\nstack.push(1);\nlet top = stack.pop();",
-        cards: [
-          { name: "Stack (LIFO)", desc: "??????? ??????????�?�??? ???? ?????", code: "stack.push(x); stack.pop();" },
-          { name: "Queue (FIFO)", desc: "???????? ???? ????�?�??? ???? ?????", code: "queue.enqueue(x); queue.dequeue();" }
+          { name: "len(s)", desc: "시퀀스 객체의 길이 반환", code: "length = len(arr)" },
+          { name: "list.append(x)", desc: "리스트 끝에 요소 추가", code: "arr.append('item')" }
         ]
       }
     };
 
-    const autocompleteDict = [
-      { key: "###", label: "### (PDF ?????�? ????)", desc: "??�?? ????? ??????PDF ??????????�????????, snippet: "\n###\n" },
-      { key: "# ", label: "# ????? 1 (H1)", desc: "�??????????", snippet: "# " },
-      { key: "## ", label: "## ????? 2 (H2)", desc: "�??? ?????????", snippet: "## " },
-      { key: "### ", label: "### ????? 3 (H3)", desc: "????????, snippet: "### " },
-      { key: "- ", label: "- ?????�????", desc: "???? ???? �????", snippet: "- " },
-      { key: "1. ", label: "1. �??? �????", desc: "???? ????? �????", snippet: "1. " },
-      { key: "```", label: "``` ???? ?????", desc: "???? ????????? ???", snippet: "```\n\n```" },
-      { key: "> ", label: "> ?��????, desc: "�?�� �?��/?��?? ???", snippet: "> " },
-      { key: "**", label: "**??????**", desc: "??��? ??????�?��", snippet: "**?????**" },
-      { key: "`", label: "`?��???????`", desc: "?��??????? �?��", snippet: "`????`" }
-    ];
+    let subjectList = JSON.parse(JSON.stringify(defaultSubjectList));
+    let appData = JSON.parse(JSON.stringify(defaultAppData));
+    let currentSubject = "sub_html5";
+    let currentEditCardIdx = null;
 
-    let currentSubject = "python";
-    let subjectList = [];
-    let appData = {};
-
-    function initData() {
-      try {
-        const storedList = localStorage.getItem("devnote_pro_subject_list");
-        const storedData = localStorage.getItem("devnote_pro_data");
-        subjectList = storedList ? JSON.parse(storedList) : JSON.parse(JSON.stringify(initialSubjectList));
-        appData = storedData ? JSON.parse(storedData) : JSON.parse(JSON.stringify(initialSubjectData));
-      } catch(e) {
-        subjectList = JSON.parse(JSON.stringify(initialSubjectList));
-        appData = JSON.parse(JSON.stringify(initialSubjectData));
-      }
-
-      if (!appData.c || !appData.c.cards || appData.c.cards.length < 4) {
-        appData.c = initialSubjectData.c;
-      }
-
-      const savedPath = localStorage.getItem("devnote_target_path");
-      if (savedPath && document.getElementById("target-save-path")) {
-        document.getElementById("target-save-path").value = savedPath;
-      }
-    }
-
+    // Storage Management
     function saveToStorage() {
       try {
-        localStorage.setItem("devnote_pro_subject_list", JSON.stringify(subjectList));
-        localStorage.setItem("devnote_pro_data", JSON.stringify(appData));
-        const pathInput = document.getElementById("target-save-path");
-        if (pathInput) localStorage.setItem("devnote_target_path", pathInput.value.trim());
-      } catch(e) {
-        console.error("Storage save failed", e);
-      }
+        localStorage.setItem("devnote_subjectList", JSON.stringify(subjectList));
+        localStorage.setItem("devnote_appData", JSON.stringify(appData));
+      } catch (e) { console.error("LocalStorage save error:", e); }
     }
 
-    function toggleSidebar() {
-      const sidebar = document.getElementById("sidebar");
-      const overlay = document.getElementById("sidebar-overlay");
-      if (!sidebar || !overlay) return;
-      const isOpen = sidebar.classList.contains("open");
-      if (isOpen) {
-        sidebar.classList.remove("open");
-        overlay.classList.remove("open");
-      } else {
-        renderLibraryTree();
-        sidebar.classList.add("open");
-        overlay.classList.add("open");
-      }
+    function loadFromStorage() {
+      try {
+        const sList = localStorage.getItem("devnote_subjectList");
+        const aData = localStorage.getItem("devnote_appData");
+        if (sList) subjectList = JSON.parse(sList);
+        if (aData) appData = JSON.parse(aData);
+      } catch (e) { console.error("LocalStorage load error:", e); }
     }
 
-    function renderLibraryTree() {
-      const treeEl = document.getElementById("library-tree-view");
-      const rootPath = (document.getElementById("target-save-path")?.value.trim()) || "???????????????????;
-      if (!treeEl) return;
-      let text = `?? ${rootPath}/\n`;
-      
-      const categories = [
-        { name: "??? 01_??�????(Web_Frontend)", key: "01_??�????(Web_Frontend)" },
-        { name: "???02_????�????�??��??(Languages)", key: "02_????�????�??��??(Languages)" },
-        { name: "???03_????_�?AI_(Applied_Tech)", key: "03_????_�?AI_(Applied_Tech)" },
-        { name: "???04_CS_????_(Computer_Science)", key: "04_CS_????_(Computer_Science)" },
-        { name: "?? 05_??????????_??�목", key: "05_??????????_??�목" }
-      ];
+    // Supabase Sync Management
+    async function saveToSupabase() {
+      if (!supabaseClient) return;
+      const targetId = currentUser ? currentUser.id : 'guest';
+      try {
+        const payload = {
+          id: targetId,
+          user_id: currentUser ? currentUser.id : null,
+          data: { subjectList, appData, targetPath: document.getElementById("target-save-path")?.value },
+          updated_at: new Date().toISOString()
+        };
+        await supabaseClient.from('devnote_data').upsert(payload);
+      } catch (err) { console.error("Supabase Save Error:", err); }
+    }
 
-      categories.forEach((cat, idx) => {
-        const isLastCat = idx === categories.length - 1;
-        const branch = isLastCat ? "????? " : "?????? ";
-        const pipe = isLastCat ? "    " : "??  ";
-        
-        const subs = subjectList.filter(s => (s.category || "05_??????????_??�목") === cat.key);
-        if (subs.length > 0) {
-          text += `${branch}${cat.name}\n`;
-          subs.forEach((sub, sIdx) => {
-            const isLastSub = sIdx === subs.length - 1;
-            const subBranch = isLastSub ? "????? " : "?????? ";
-            text += `${pipe}${subBranch}?? ${sub.name}.md\n`;
-          });
+    async function loadFromSupabase() {
+      if (!supabaseClient) return false;
+      const targetId = currentUser ? currentUser.id : 'guest';
+      try {
+        const { data, error } = await supabaseClient.from('devnote_data').select('*').eq('id', targetId).single();
+        if (error || !data || !data.data) return false;
+        if (data.data.subjectList) subjectList = data.data.subjectList;
+        if (data.data.appData) appData = data.data.appData;
+        if (data.data.targetPath && document.getElementById("target-save-path")) {
+          document.getElementById("target-save-path").value = data.data.targetPath;
         }
-      });
-
-      treeEl.textContent = text;
+        return true;
+      } catch (err) { console.error("Supabase Load Error:", err); return false; }
     }
 
-    function switchMobileTab(targetPanelId, el) {
-      document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active-panel"));
-      if (el) el.classList.add("active");
-      const target = document.getElementById(targetPanelId);
-      if (target) target.classList.add("active-panel");
+    // Auth Management
+    function updateAuthUI() {
+      const container = document.getElementById("auth-status-container");
+      if (!container) return;
+      if (currentUser) {
+        const emailShort = currentUser.email ? currentUser.email.split('@')[0] : '유저';
+        container.innerHTML = `
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.78rem; color:var(--accent); font-weight:600;"><i class="fa-solid fa-circle-user"></i> ${emailShort}</span>
+            <button class="auth-btn logout" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
+          </div>
+        `;
+        document.getElementById("btn-logout").addEventListener("click", handleLogout);
+      } else {
+        container.innerHTML = `
+          <button class="auth-btn" id="btn-open-auth-modal"><i class="fa-solid fa-user-lock"></i> 로그인 / 회원가입</button>
+        `;
+        document.getElementById("btn-open-auth-modal").addEventListener("click", () => openAuthModal());
+      }
     }
 
+    async function handleLogin() {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+      const errBox = document.getElementById("auth-error-msg");
+      errBox.style.display = "none";
+
+      if (!email || !password) {
+        errBox.innerText = "이메일과 비밀번호를 모두 입력해주세요.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      if (!supabaseClient) {
+        errBox.innerText = "Supabase 클라이언트가 초기화되지 않았습니다.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        errBox.innerText = "로그인 실패: " + (error.message || "이메일 또는 비밀번호를 확인하세요.");
+        errBox.style.display = "block";
+      } else {
+        closeAuthModal();
+        alert("성공적으로 로그인되었습니다!");
+      }
+    }
+
+    async function handleSignup() {
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value.trim();
+      const confirm = document.getElementById("signup-password-confirm").value.trim();
+      const errBox = document.getElementById("signup-error-msg");
+      const succBox = document.getElementById("signup-success-msg");
+      errBox.style.display = "none";
+      succBox.style.display = "none";
+
+      if (!email || !password) {
+        errBox.innerText = "이메일과 비밀번호를 입력해주세요.";
+        errBox.style.display = "block";
+        return;
+      }
+      if (password.length < 6) {
+        errBox.innerText = "비밀번호는 최소 6자 이상이어야 합니다.";
+        errBox.style.display = "block";
+        return;
+      }
+      if (password !== confirm) {
+        errBox.innerText = "비밀번호가 일치하지 않습니다.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        errBox.innerText = "회원가입 실패: " + error.message;
+        errBox.style.display = "block";
+      } else {
+        succBox.innerText = "회원가입 완료! 로그인 탭에서 로그인해주세요.";
+        succBox.style.display = "block";
+      }
+    }
+
+    async function handleLogout() {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+      currentUser = null;
+      updateAuthUI();
+      alert("로그아웃 되었습니다.");
+    }
+
+    function openAuthModal(tab = "login") {
+      document.getElementById("auth-modal").classList.add("active");
+      switchAuthTab(tab);
+    }
+    function closeAuthModal() {
+      document.getElementById("auth-modal").classList.remove("active");
+    }
+
+    function switchAuthTab(tab) {
+      const tabLogin = document.getElementById("tab-auth-login");
+      const tabSignup = document.getElementById("tab-auth-signup");
+      const formLogin = document.getElementById("form-auth-login");
+      const formSignup = document.getElementById("form-auth-signup");
+
+      if (tab === "login") {
+        tabLogin.classList.add("active");
+        tabSignup.classList.remove("active");
+        formLogin.style.display = "flex";
+        formSignup.style.display = "none";
+      } else {
+        tabSignup.classList.add("active");
+        tabLogin.classList.remove("active");
+        formSignup.style.display = "flex";
+        formLogin.style.display = "none";
+      }
+    }
+
+    // Navigation & Data Render
     function renderSubjectNav() {
       const nav = document.getElementById("subject-nav");
       if (!nav) return;
       nav.innerHTML = "";
       subjectList.forEach(sub => {
         const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = `nav-btn ${sub.id === currentSubject ? 'active' : ''}`;
-        btn.innerHTML = `<i class="${sub.icon}"></i> ${sub.name}`;
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          currentSubject = sub.id;
-          renderSubjectNav();
-          loadSubject(currentSubject);
-        });
+        btn.className = `subject-tab ${sub.id === currentSubject ? "active" : ""}`;
+        btn.innerHTML = `<i class="fa-solid fa-bookmark"></i> ${sub.name}`;
+        btn.onclick = () => loadSubject(sub.id);
         nav.appendChild(btn);
       });
+      const addBtn = document.createElement("button");
+      addBtn.className = "add-subject-btn";
+      addBtn.innerHTML = `<i class="fa-solid fa-plus"></i> 과목 추가`;
+      addBtn.onclick = openSubjectModal;
+      nav.appendChild(addBtn);
     }
 
-    function openSubjectModal() {
-      document.getElementById("new-sub-name").value = "";
-      document.getElementById("new-sub-icon").value = "fa-solid fa-code";
-      document.getElementById("subject-modal").style.display = "flex";
-    }
-    function closeSubjectModal() {
-      document.getElementById("subject-modal").style.display = "none";
-    }
-
-    function createNewSubject() {
-      const name = document.getElementById("new-sub-name").value.trim();
-      const category = document.getElementById("new-sub-category").value;
-      const icon = document.getElementById("new-sub-icon").value.trim() || "fa-solid fa-code";
-      const runnerType = document.getElementById("new-sub-mode").value;
-      const targetPath = (document.getElementById("target-save-path")?.value.trim()) || "???????????????????;
-
-      if (!name) { alert("??�목�???????????��?��??."); return; }
-
-      const isConfirmed = confirm(
-        `[????�목 �?�???????????????? ????\n\n` +
-        `????�목�? ${name}\n` +
-        `??�???????�??? �???: ${targetPath}/${category}/\n` +
-        `????????�????????????? ${name}.md\n\n` +
-        `??�??? ????????? ????�목??????????????��? ?��??????�???????`
-      );
-
-      if (!isConfirmed) return;
-
-      const id = "sub_" + Date.now();
-      const newSubject = { id, name, category, icon, runnerType };
-      subjectList.push(newSubject);
-
-      appData[id] = {
-        title: name,
-        category: category,
-        runnerType: runnerType,
-        defaultNote: `# ${name} ??????��??\n- ?????�?????????? ??????????????��??????`,
-        defaultCode: `// ${name} ?????�?�?�� ????`,
-        cards: []
-      };
-
-      saveToStorage();
-      closeSubjectModal();
+    function loadSubject(id) {
       currentSubject = id;
       renderSubjectNav();
-      loadSubject(currentSubject);
-    }
-
-    function loadSubject(subjectId) {
-      const subMeta = subjectList.find(s => s.id === subjectId) || { runnerType: "memo" };
-      if (!appData[subjectId]) {
-        appData[subjectId] = { title: "????�목", defaultNote: "", defaultCode: "", cards: [], runnerType: subMeta.runnerType };
+      if (!appData[id]) {
+        const meta = subjectList.find(s => s.id === id);
+        appData[id] = { title: meta ? meta.name : "과목", defaultNote: "", defaultCode: "", cards: [], runnerType: meta ? meta.runnerType : "web" };
       }
-      const data = appData[subjectId];
+      const data = appData[id];
       const noteInput = document.getElementById("note-input");
       const codeEditor = document.getElementById("code-editor");
-      const searchInput = document.getElementById("search-input");
-
       if (noteInput) noteInput.value = data.defaultNote || "";
       if (codeEditor) codeEditor.value = data.defaultCode || "";
-      if (searchInput) searchInput.value = "";
-      
+
       renderCards();
-      setupRunnerView(subMeta.runnerType || data.runnerType || "memo");
+      setupRunnerView();
+      renderLibraryTree();
     }
 
-    function renderCards(filteredList = null) {
-      const list = document.getElementById("cheat-list");
+    function renderCards(filterText = "") {
+      const list = document.getElementById("card-list");
       if (!list) return;
       list.innerHTML = "";
-      const cards = filteredList || (appData[currentSubject] && appData[currentSubject].cards ? appData[currentSubject].cards : []);
+      const data = appData[currentSubject] || { cards: [] };
+      const cards = (data.cards || []).filter(c => 
+        c.name.toLowerCase().includes(filterText.toLowerCase()) || 
+        c.desc.toLowerCase().includes(filterText.toLowerCase())
+      );
 
       if (cards.length === 0) {
-        list.innerHTML = `<div style="color: var(--text-muted); font-size: 0.78rem; text-align: center; padding: 25px 0;">?��???????카�?????? �???결�????? ?????????.</div>`;
+        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:20px 0;">등록된 사전에 카드가 없습니다.</div>`;
         return;
       }
 
-      cards.forEach((card) => {
-        const originalIdx = appData[currentSubject].cards.indexOf(card);
+      cards.forEach((c, idx) => {
         const div = document.createElement("div");
-        div.className = "cheat-card";
-        
-        const cardTop = document.createElement("div");
-        cardTop.className = "card-top";
-
-        const cardTitle = document.createElement("span");
-        cardTitle.className = "card-title";
-        cardTitle.textContent = card.name || "";
-
-        const cardCtrls = document.createElement("div");
-        cardCtrls.className = "card-ctrls";
-
-        const btnUp = document.createElement("button");
-        btnUp.type = "button";
-        btnUp.className = "card-btn";
-        btnUp.title = "????";
-        btnUp.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
-        btnUp.addEventListener("click", () => moveCard(originalIdx, -1));
-
-        const btnDown = document.createElement("button");
-        btnDown.type = "button";
-        btnDown.className = "card-btn";
-        btnDown.title = "?????;
-        btnDown.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
-        btnDown.addEventListener("click", () => moveCard(originalIdx, 1));
-
-        const btnEdit = document.createElement("button");
-        btnEdit.type = "button";
-        btnEdit.className = "card-btn";
-        btnEdit.title = "?????";
-        btnEdit.innerHTML = '<i class="fa-solid fa-pen"></i>';
-        btnEdit.addEventListener("click", () => openCardModal(originalIdx));
-
-        const btnDel = document.createElement("button");
-        btnDel.type = "button";
-        btnDel.className = "card-btn del";
-        btnDel.title = "????;
-        btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
-        btnDel.addEventListener("click", () => deleteCard(originalIdx));
-
-        cardCtrls.append(btnUp, btnDown, btnEdit, btnDel);
-        cardTop.append(cardTitle, cardCtrls);
-
-        const descDiv = document.createElement("div");
-        descDiv.className = "desc";
-        descDiv.textContent = card.desc || "";
-
-        const codeEl = document.createElement("code");
-        codeEl.textContent = card.code || "";
-        codeEl.addEventListener("click", () => insertSnippet(card.code || ""));
-
-        div.append(cardTop, descDiv, codeEl);
+        div.className = "dict-card";
+        div.innerHTML = `
+          <div class="card-title-row">
+            <div class="card-title">${c.name}</div>
+            <div class="card-actions">
+              <button class="card-action-btn" onclick="openCardModal(${idx})"><i class="fa-solid fa-pen"></i></button>
+              <button class="card-action-btn delete" onclick="deleteCard(${idx})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+          <div class="card-desc">${c.desc}</div>
+          ${c.code ? `<div class="code-snippet">${c.code}</div>` : ""}
+        `;
         list.appendChild(div);
       });
     }
 
-    function moveCard(index, direction) {
-      const cards = appData[currentSubject].cards;
-      const targetIdx = index + direction;
-      if (targetIdx < 0 || targetIdx >= cards.length) return;
-      const temp = cards[index];
-      cards[index] = cards[targetIdx];
-      cards[targetIdx] = temp;
-      saveToStorage();
-      filterCards();
-    }
+    function openCardModal(idx = null) {
+      currentEditCardIdx = idx;
+      const modal = document.getElementById("card-modal");
+      const title = document.getElementById("card-modal-title");
+      const nameIn = document.getElementById("card-name-input");
+      const descIn = document.getElementById("card-desc-input");
+      const codeIn = document.getElementById("card-code-input");
 
-    function deleteCard(index) {
-      if (confirm("??카�?�?????????�???????")) {
-        appData[currentSubject].cards.splice(index, 1);
-        saveToStorage();
-        filterCards();
-      }
-    }
-
-    function openCardModal(editIdx = -1) {
-      document.getElementById("edit-card-index").value = editIdx;
-      if (editIdx >= 0) {
-        const card = appData[currentSubject].cards[editIdx];
-        document.getElementById("modal-title").innerText = "�?????�???? 카�???????";
-        document.getElementById("modal-name").value = card.name || "";
-        document.getElementById("modal-desc").value = card.desc || "";
-        document.getElementById("modal-code").value = card.code || "";
+      if (idx !== null && appData[currentSubject].cards[idx]) {
+        title.innerText = "사전 카드 수정";
+        const c = appData[currentSubject].cards[idx];
+        nameIn.value = c.name;
+        descIn.value = c.desc;
+        codeIn.value = c.code || "";
       } else {
-        document.getElementById("modal-title").innerText = "??�?????�???? 카�??????";
-        document.getElementById("modal-name").value = "";
-        document.getElementById("modal-desc").value = "";
-        document.getElementById("modal-code").value = "";
+        title.innerText = "사전 카드 추가";
+        nameIn.value = "";
+        descIn.value = "";
+        codeIn.value = "";
       }
-      document.getElementById("card-modal").style.display = "flex";
+      modal.classList.add("active");
     }
 
     function closeCardModal() {
-      document.getElementById("card-modal").style.display = "none";
+      document.getElementById("card-modal").classList.remove("active");
     }
 
     function saveCardFromModal() {
-      const name = document.getElementById("modal-name").value.trim();
-      const desc = document.getElementById("modal-desc").value.trim();
-      const code = document.getElementById("modal-code").value.trim();
-      const editIdx = parseInt(document.getElementById("edit-card-index").value);
+      const name = document.getElementById("card-name-input").value.trim();
+      const desc = document.getElementById("card-desc-input").value.trim();
+      const code = document.getElementById("card-code-input").value.trim();
 
-      if (!name) { alert("??????????�??????? ???????��?��??."); return; }
-
-      const cardData = { name, desc, code };
+      if (!name) { alert("카드 이름을 입력하세요."); return; }
       if (!appData[currentSubject].cards) appData[currentSubject].cards = [];
 
-      if (editIdx >= 0) {
-        appData[currentSubject].cards[editIdx] = cardData;
+      if (currentEditCardIdx !== null) {
+        appData[currentSubject].cards[currentEditCardIdx] = { name, desc, code };
       } else {
-        appData[currentSubject].cards.push(cardData);
+        appData[currentSubject].cards.push({ name, desc, code });
       }
-
-      saveToStorage();
-      filterCards();
       closeCardModal();
-    }
-
-    function filterCards() {
-      const searchInput = document.getElementById("search-input");
-      if (!searchInput) return;
-      const query = searchInput.value.trim().toLowerCase();
-      const allCards = appData[currentSubject].cards || [];
-      if (!query) { renderCards(allCards); return; }
-
-      const filtered = allCards.filter(card => {
-        const nameMatch = card.name && card.name.toLowerCase().includes(query);
-        const descMatch = card.desc && card.desc.toLowerCase().includes(query);
-        const codeMatch = card.code && card.code.toLowerCase().includes(query);
-        return nameMatch || descMatch || codeMatch;
-      });
-
-      renderCards(filtered);
-    }
-
-    function handleNoteInput(e) {
-      const textarea = e.target;
-      const text = textarea.value;
-      const cursor = textarea.selectionStart;
-      const lastNewLine = text.lastIndexOf("\n", cursor - 1);
-      const currentLine = text.substring(lastNewLine + 1, cursor);
-      const popup = document.getElementById("autocomplete-popup");
-      if (!popup) return;
-      
-      let matches = [];
-      if (currentLine.startsWith("#") || currentLine.startsWith("-") || currentLine.startsWith("`") || currentLine.startsWith(">") || currentLine.startsWith("*")) {
-        matches = autocompleteDict.filter(item => item.key.startsWith(currentLine.trim()) || item.snippet.startsWith(currentLine));
-      }
-
-      const word = currentLine.trim().toLowerCase();
-      if (word.length >= 1 && appData[currentSubject] && appData[currentSubject].cards) {
-        const cardMatches = appData[currentSubject].cards.filter(c => (c.name && c.name.toLowerCase().includes(word)) || (c.code && c.code.toLowerCase().includes(word))).map(c => ({
-          label: c.name,
-          desc: c.desc,
-          snippet: c.code
-        }));
-        matches = [...matches, ...cardMatches];
-      }
-
-      if (matches.length > 0) {
-        popup.innerHTML = "";
-        matches.forEach((m, i) => {
-          const itemDiv = document.createElement("div");
-          itemDiv.className = `hint-item ${i === 0 ? 'selected' : ''}`;
-          itemDiv.addEventListener("click", () => applySnippet(m.snippet));
-
-          const keySpan = document.createElement("span");
-          keySpan.className = "hint-keyword";
-          keySpan.textContent = m.label || m.name || "";
-
-          const descSpan = document.createElement("span");
-          descSpan.className = "hint-desc";
-          descSpan.textContent = m.desc || "";
-
-          itemDiv.append(keySpan, descSpan);
-          popup.appendChild(itemDiv);
-        });
-        popup.style.display = "block";
-      } else {
-        popup.style.display = "none";
-      }
-    }
-
-    function handleNoteKeydown(e) {
-      const popup = document.getElementById("autocomplete-popup");
-      if (popup && popup.style.display === "block" && (e.key === "Tab" || e.key === "Enter")) {
-        const selected = popup.querySelector(".hint-item.selected");
-        if (selected) {
-          e.preventDefault();
-          selected.click();
-        }
-      }
-    }
-
-    function applySnippet(snippet) {
-      const textarea = document.getElementById("note-input");
-      if (!textarea) return;
-      const cursor = textarea.selectionStart;
-      const text = textarea.value;
-      const lastNewLine = text.lastIndexOf("\n", cursor - 1);
-      const before = text.substring(0, lastNewLine + 1);
-      const after = text.substring(cursor);
-      textarea.value = before + snippet + after;
-      
-      const popup = document.getElementById("autocomplete-popup");
-      if (popup) popup.style.display = "none";
-      textarea.focus();
-    }
-
-    function insertSnippet(snippet) {
-      const editor = document.getElementById("code-editor");
-      if (editor) editor.value += "\n" + snippet;
-    }
-
-    // PDF �?????????? '###' ???????????�? ????????? �???    function exportToPDF() {
-      const noteInput = document.getElementById("note-input");
-      if (!noteInput) return;
-      const noteContent = noteInput.value;
-      const currentSub = subjectList.find(s => s.id === currentSubject) || { name: currentSubject };
-      const pdfArea = document.getElementById("pdf-render-area");
-
-      if (!window.html2pdf || !window.marked) {
-        alert("PDF ?????�?????�?????? �????????? ???? ?????? ???????��?��??.");
-        return;
-      }
-
-      // 1. ????? ?????'###' ???? '---'???<div class="pdf-page-break"></div> ??�???      let processedNote = noteContent.replace(/^\s*###\s*$/gm, '<div class="pdf-page-break"></div>');
-
-      const parsedHTML = marked.parse(processedNote);
-      pdfArea.innerHTML = `
-        <h1>???DevNote - ${currentSub.name} ????????? ?��??</h1>
-        <p style="color: #64748b; font-size: 8pt; margin-bottom: 16px;">????? ${new Date().toLocaleDateString()}</p>
-        <div>${parsedHTML}</div>
-      `;
-      pdfArea.style.display = "block";
-
-      const opt = {
-        margin: [12, 12, 12, 12],
-        filename: `${currentSub.name}_?????��??.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
-      };
-
-      html2pdf().set(opt).from(pdfArea).save().then(() => {
-        pdfArea.style.display = "none";
-        toggleSidebar();
-      });
-    }
-
-    function generateMarkdownContent(sub) {
-      const data = appData[sub.id] || {};
-      const targetPath = (document.getElementById("target-save-path")?.value.trim()) || "???????????????????;
-      let md = `# ???${sub.name} ??????????n\n`;
-      md += `> ????�???: ${targetPath}/${sub.category || '�???'}/${sub.name}.md\n> �?? ??????? ${new Date().toLocaleString()}\n\n`;
-      md += `## ?????????��??\n${data.defaultNote || ''}\n\n`;
-      md += `## ???????/ ?????????\n\`\`\`\n${data.defaultCode || ''}\n\`\`\`\n\n`;
-      md += `## ????????? �?????& �???? �????????\n`;
-      if (data.cards && data.cards.length > 0) {
-        data.cards.forEach(c => {
-          md += `### ??${c.name}\n- **????:** ${c.desc}\n- **??�문/????:**\n\`\`\`\n${c.code}\n\`\`\`\n\n`;
-        });
-      } else {
-        md += `- ?��???????카�???? ?????????.\n`;
-      }
-      return md;
-    }
-
-    function exportCurrentMarkdownFile() {
+      renderCards();
       saveCurrentData();
-      const currentSub = subjectList.find(s => s.id === currentSubject) || { name: currentSubject };
-      const targetPath = (document.getElementById("target-save-path")?.value.trim()) || "???????????????????;
-      const content = generateMarkdownContent(currentSub);
-      const fileName = `${currentSub.name}.md`;
-
-      const isConfirmed = confirm(
-        `[??????�목 �??????????????????????\n\n` +
-        `??????�??? �???: ${targetPath}/${currentSub.category || '�???'}/\n` +
-        `?????????? ${fileName}\n\n` +
-        `????????????�????????미�?? �??????????????�??? ??????????��????????????`
-      );
-
-      if (!isConfirmed) return;
-
-      const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
     }
 
-    function exportHierarchyZip() {
-      const targetPath = (document.getElementById("target-save-path")?.value.trim()) || "???????????????????;
-
-      const isConfirmed = confirm(
-        `[�???�??? 4???�� ????? ZIP ??????????\n\n` +
-        `??????????? [${targetPath}] �??? 4???�� ????? ?��??????? ????????????????\n` +
-        `??�???�목�??��??, ?????????, ?????.md �?????????????�?????�????????.\n\n` +
-        `???? ???�� ????? ZIP ??????????�????????�???????`
-      );
-
-      if (!isConfirmed) return;
-
-      if (!window.JSZip) {
-        alert("JSZip �?????�?????? �????????? ???? ?????? ?????�?????");
-        return;
+    function deleteCard(idx) {
+      if (confirm("이 카드를 삭제하시겠습니까?")) {
+        appData[currentSubject].cards.splice(idx, 1);
+        renderCards();
+        saveCurrentData();
       }
-
-      saveCurrentData();
-      const zip = new JSZip();
-      const rootFolder = zip.folder(targetPath);
-
-      subjectList.forEach(sub => {
-        const folderName = sub.category || "05_??????????_??�목";
-        const catFolder = rootFolder.folder(folderName);
-        const fileName = `${sub.name.replace(/[/\\?%*:|"<>]/g, '_')}.md`;
-        const content = generateMarkdownContent(sub);
-        catFolder.file(fileName, content);
-      });
-
-      zip.generateAsync({ type: "blob" }).then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${targetPath}_${new Date().toISOString().slice(0,10)}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      });
     }
 
-    function exportDataJSON() {
-      saveCurrentData();
-      const exportObj = { subjectList, appData, targetPath: document.getElementById("target-save-path")?.value };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `DevNote_Backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function importDataJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (imported.subjectList && imported.appData) {
-            subjectList = imported.subjectList;
-            appData = imported.appData;
-            if (imported.targetPath && document.getElementById("target-save-path")) {
-              document.getElementById("target-save-path").value = imported.targetPath;
-            }
-            saveToStorage();
-            currentSubject = subjectList[0].id;
-            renderSubjectNav();
-            loadSubject(currentSubject);
-            alert("백�???��???��? ?��??????�?????????????!");
-            toggleSidebar();
-          } else {
-            alert("???????? ???? 백�????????????????");
-          }
-        } catch(err) {
-          alert("??????????? ??????�? �????????????: " + err);
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function setupRunnerView(runnerType) {
-      const consoleOutput = document.getElementById("console-output");
-      const webPreview = document.getElementById("web-preview");
+    // Code Execution & Runner
+    function setupRunnerView() {
+      const sub = subjectList.find(s => s.id === currentSubject);
+      const runnerType = sub ? sub.runnerType : "web";
+      const previewFrame = document.getElementById("web-preview");
       const diagramView = document.getElementById("diagram-view");
-      const runBtn = document.getElementById("btn-run-code");
+      const consoleOutput = document.getElementById("console-output");
 
-      if (consoleOutput) consoleOutput.style.display = "none";
-      if (webPreview) webPreview.style.display = "none";
-      if (diagramView) diagramView.style.display = "none";
-
-      if (runnerType === "python") {
-        if (consoleOutput) {
-          consoleOutput.style.display = "block";
-          consoleOutput.innerText = "??? '????' �???????��?????????��? ??????�?? ????????? ??????????";
-        }
-        if (runBtn) runBtn.style.display = "inline-flex";
-      } else if (runnerType === "web") {
-        if (webPreview) webPreview.style.display = "block";
-        if (runBtn) runBtn.style.display = "inline-flex";
+      if (runnerType === "web") {
+        previewFrame.style.display = "block";
+        diagramView.style.display = "none";
+        consoleOutput.style.display = "none";
         updateWebPreview();
       } else if (runnerType === "diagram") {
-        if (diagramView) diagramView.style.display = "flex";
-        if (runBtn) runBtn.style.display = "inline-flex";
+        previewFrame.style.display = "none";
+        diagramView.style.display = "block";
+        consoleOutput.style.display = "none";
         renderMermaidDiagram();
       } else {
-        if (consoleOutput) {
-          consoleOutput.style.display = "block";
-          consoleOutput.innerText = "???? �?�� �????????????�????????????????";
-        }
-        if (runBtn) runBtn.style.display = "none";
+        previewFrame.style.display = "none";
+        diagramView.style.display = "none";
+        consoleOutput.style.display = "block";
       }
     }
 
-    async function executeCurrentCode() {
-      const subMeta = subjectList.find(s => s.id === currentSubject) || { runnerType: "memo" };
-      const runnerType = subMeta.runnerType || "memo";
-      const code = document.getElementById("code-editor").value;
-      const consoleOutput = document.getElementById("console-output");
-
-      if (runnerType === "python") {
-        if (!consoleOutput) return;
-        consoleOutput.innerText = "????????��? ??..";
-        try {
-          if (!window.pyodideInstance && window.loadPyodide) {
-            window.pyodideInstance = await loadPyodide();
-          }
-          if (window.pyodideInstance) {
-            window.pyodideInstance.runPython(`import sys, io; sys.stdout = io.StringIO()`);
-            await window.pyodideInstance.runPythonAsync(code);
-            const stdout = window.pyodideInstance.runPython("sys.stdout.getvalue()");
-            consoleOutput.innerText = stdout || "???? ???? ??? (?????????????";
-          } else {
-            consoleOutput.innerText = "?????????? �????????;
-          }
-        } catch(err) {
-          consoleOutput.innerText = "???? ???? �???:\n" + err;
-        }
-      } else if (runnerType === "web") {
-        updateWebPreview();
-      } else if (runnerType === "diagram") {
-        renderMermaidDiagram();
-      }
+    function executeCurrentCode() {
+      const sub = subjectList.find(s => s.id === currentSubject);
+      const runnerType = sub ? sub.runnerType : "web";
+      if (runnerType === "web") updateWebPreview();
+      else if (runnerType === "diagram") renderMermaidDiagram();
+      else runPythonCode();
     }
 
     function updateWebPreview() {
-      const codeEditor = document.getElementById("code-editor");
-      const previewFrame = document.getElementById("web-preview");
-      if (!codeEditor || !previewFrame) return;
-      const code = codeEditor.value;
-      const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
-      doc.open();
-      doc.write(code);
-      doc.close();
+      const code = document.getElementById("code-editor").value;
+      const frame = document.getElementById("web-preview");
+      if (!frame) return;
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open(); doc.write(code); doc.close();
     }
 
     async function renderMermaidDiagram() {
-      const codeEditor = document.getElementById("code-editor");
-      const diagramView = document.getElementById("diagram-view");
-      if (!codeEditor || !diagramView) return;
-      const code = codeEditor.value;
-      diagramView.innerHTML = "";
+      const code = document.getElementById("code-editor").value;
+      const view = document.getElementById("diagram-view");
+      if (!view) return;
+      view.innerHTML = "";
       try {
         if (window.mermaid) {
           const { svg } = await mermaid.render('mermaid-svg', code);
-          diagramView.innerHTML = svg;
+          view.innerHTML = svg;
+        }
+      } catch (e) { view.innerHTML = "<p style='color:#ef4444;'>다이어그램 문법을 확인해주세요.</p>"; }
+    }
+
+    async function runPythonCode() {
+      const code = document.getElementById("code-editor").value;
+      const consoleOut = document.getElementById("console-output");
+      if (!consoleOut) return;
+      consoleOut.innerText = "파이썬 실행 중...";
+      try {
+        if (!window.pyodideInstance && window.loadPyodide) {
+          window.pyodideInstance = await window.loadPyodide();
+        }
+        if (window.pyodideInstance) {
+          window.pyodideInstance.runPython(`import sys, io; sys.stdout = io.StringIO()`);
+          await window.pyodideInstance.runPythonAsync(code);
+          const out = window.pyodideInstance.runPython("sys.stdout.getvalue()");
+          consoleOut.innerText = out || "실행 결과가 없습니다.";
         } else {
-          diagramView.innerHTML = "<p style='color:#94a3b8;font-size:0.8rem;'>다이어그램 모듈 로딩 중...</p>";
+          consoleOut.innerText = "Pyodide 파이썬 인터프리터 로딩에 실패했습니다.";
         }
-      } catch (e) {
-        diagramView.innerHTML = "<p style='color:#ef4444;font-size:0.8rem;'>다이어그램 문법을 확인해주세요.</p>";
-      }
+      } catch (e) { consoleOut.innerText = "실행 에러:\n" + e; }
     }
 
-    // Supabase Integration
-    const SUPABASE_URL = "https://bxbihhulzbpdxdijphil.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4YmloaHVsemJwZHhkaWpwaGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NzA5NTcsImV4cCI6MjEwMzU0Njk1N30.k1BsY6_XgXwnWjG6gpYmuPG5uNPSJFFRFr6TH1yfpYE";
-    let supabaseClient = null;
+    // Modal Helpers & Events
+    function openSubjectModal() { document.getElementById("subject-modal").classList.add("active"); }
+    function closeSubjectModal() { document.getElementById("subject-modal").classList.remove("active"); }
 
-    if (window.supabase) {
-      try {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      } catch (err) {
-        console.error("Supabase Client Init Error:", err);
-      }
+    function createNewSubject() {
+      const name = document.getElementById("new-subject-name").value.trim();
+      const category = document.getElementById("new-subject-category").value;
+      const runnerType = document.getElementById("new-subject-runner").value;
+
+      if (!name) { alert("과목 이름을 입력해주세요."); return; }
+      const newId = "sub_" + Date.now();
+      subjectList.push({ id: newId, name, category, runnerType });
+      appData[newId] = { title: name, defaultNote: `# ${name} 노트\n`, defaultCode: "// 예제 코드", cards: [] };
+
+      closeSubjectModal();
+      document.getElementById("new-subject-name").value = "";
+      loadSubject(newId);
+      saveCurrentData();
     }
 
-    async function saveToSupabase() {
-      if (!supabaseClient) return;
-      try {
-        const payload = {
-          id: 'default',
-          data: { subjectList, appData, targetPath: document.getElementById("target-save-path")?.value },
-          updated_at: new Date().toISOString()
-        };
-        await supabaseClient.from('devnote_data').upsert(payload);
-      } catch (err) {
-        console.error("Supabase Sync Error:", err);
-      }
+    function toggleSidebar() {
+      document.getElementById("sidebar-drawer").classList.toggle("active");
+      document.getElementById("sidebar-overlay").classList.toggle("active");
     }
 
-    async function loadFromSupabase() {
-      if (!supabaseClient) return false;
-      try {
-        const { data, error } = await supabaseClient.from('devnote_data').select('*').eq('id', 'default').single();
-        if (error) return false;
-        if (data && data.data) {
-          if (data.data.subjectList) subjectList = data.data.subjectList;
-          if (data.data.appData) appData = data.data.appData;
-          if (data.data.targetPath && document.getElementById("target-save-path")) {
-            document.getElementById("target-save-path").value = data.data.targetPath;
-          }
-          return true;
-        }
-      } catch (err) {
-        console.error("Supabase Load Error:", err);
-      }
-      return false;
+    function renderLibraryTree() {
+      const tree = document.getElementById("library-tree-view");
+      const path = (document.getElementById("target-save-path")?.value.trim()) || "내_학습_라이브러리";
+      if (!tree) return;
+      let text = `📂 ${path}/\n`;
+      const categories = [...new Set(subjectList.map(s => s.category || "05_사용자_추가_과목"))];
+      categories.forEach(cat => {
+        text += ` ├── 📂 ${cat}/\n`;
+        const subs = subjectList.filter(s => (s.category || "05_사용자_추가_과목") === cat);
+        subs.forEach(s => { text += ` │    └── 📄 ${s.name}.md\n`; });
+      });
+      tree.innerText = text;
     }
 
     function saveCurrentData() {
@@ -1689,68 +1288,192 @@
       saveToSupabase();
       const status = document.getElementById("save-status");
       if (status) {
-        status.innerHTML = '<i class="fa-solid fa-check"></i> 저장 완료 (Supabase 동기화됨)';
-        setTimeout(() => { status.innerHTML = '<i class="fa-solid fa-cloud"></i> 클라우드 자동 저장됨'; }, 1500);
+        status.innerHTML = '<i class="fa-solid fa-check"></i> 저장 완료!';
+        setTimeout(() => { status.innerHTML = '<i class="fa-solid fa-cloud"></i> 자동 저장됨'; }, 1500);
       }
     }
 
-    function attachAllEvents() {
-      const bind = (id, event, fn) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(event, fn);
+    // Export PDF & ZIP
+    function exportToPDF() {
+      const sub = subjectList.find(s => s.id === currentSubject);
+      const noteContent = document.getElementById("note-input").value;
+      const element = document.createElement("div");
+      element.style.padding = "20px";
+      element.style.color = "#000";
+      element.innerHTML = `
+        <h1 style="font-size:1.5rem; margin-bottom:10px;">DevNote - ${sub ? sub.name : '학습노트'}</h1>
+        <hr style="margin-bottom:15px;"/>
+        <pre style="white-space:pre-wrap; font-family:sans-serif; font-size:1rem; line-height:1.6;">${noteContent}</pre>
+      `;
+      const opt = {
+        margin: 10,
+        filename: `${sub ? sub.name : '학습노트'}_DevNote.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
-
-      bind("btn-open-sidebar", "click", toggleSidebar);
-      bind("sidebar-overlay", "click", toggleSidebar);
-      bind("btn-close-sidebar", "click", toggleSidebar);
-      bind("btn-export-pdf", "click", exportToPDF);
-      bind("btn-save-data", "click", () => {
-        saveCurrentData();
-        toggleSidebar();
-      });
-      bind("btn-open-subject-modal", "click", openSubjectModal);
-
-      bind("tab-btn-dict", "click", function() { switchMobileTab("panel-dict", this); });
-      bind("tab-btn-note", "click", function() { switchMobileTab("panel-note", this); });
-      bind("tab-btn-runner", "click", function() { switchMobileTab("panel-runner", this); });
-
-      bind("btn-open-card-modal", "click", () => openCardModal());
-      bind("btn-run-code", "click", executeCurrentCode);
-      bind("search-input", "input", filterCards);
-
-      bind("btn-export-current-md", "click", exportCurrentMarkdownFile);
-      bind("btn-export-zip", "click", exportHierarchyZip);
-      bind("btn-export-json", "click", exportDataJSON);
-      bind("btn-import-json-trigger", "click", () => document.getElementById("import-file-input").click());
-      bind("import-file-input", "change", importDataJSON);
-
-      bind("target-save-path", "input", () => {
-        saveToStorage();
-        renderLibraryTree();
-      });
-
-      bind("btn-cancel-subject", "click", closeSubjectModal);
-      bind("btn-create-subject", "click", createNewSubject);
-      bind("btn-cancel-card", "click", closeCardModal);
-      bind("btn-save-card", "click", saveCardFromModal);
-
-      const noteInput = document.getElementById("note-input");
-      if (noteInput) {
-        noteInput.addEventListener("input", handleNoteInput);
-        noteInput.addEventListener("keydown", handleNoteKeydown);
-      }
+      if (window.html2pdf) html2pdf().set(opt).from(element).save();
+      else alert("PDF 라이브러리를 로드할 수 없습니다.");
     }
 
+    function exportCurrentMarkdownFile() {
+      const sub = subjectList.find(s => s.id === currentSubject);
+      const data = appData[currentSubject];
+      if (!sub || !data) return;
+      let md = `# ${sub.name}\n\n## 1. 학습 노트\n${data.defaultNote || ''}\n\n## 2. 예제 코드\n\`\`\`\n${data.defaultCode || ''}\n\`\`\`\n`;
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${sub.name}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportHierarchyZip() {
+      if (!window.JSZip) { alert("JSZip 라이브러리가 필요합니다."); return; }
+      saveCurrentData();
+      const zip = new JSZip();
+      const path = (document.getElementById("target-save-path")?.value.trim()) || "내_학습_라이브러리";
+      const folder = zip.folder(path);
+
+      subjectList.forEach(sub => {
+        const cat = sub.category || "05_사용자_추가_과목";
+        const catFolder = folder.folder(cat);
+        const data = appData[sub.id] || {};
+        const content = `# ${sub.name}\n\n## 1. 학습 노트\n${data.defaultNote || ''}\n\n## 2. 실습 코드\n\`\`\`\n${data.defaultCode || ''}\n\`\`\`\n`;
+        catFolder.file(`${sub.name}.md`, content);
+      });
+
+      zip.generateAsync({ type: "blob" }).then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${path}_백업.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function exportDataJSON() {
+      saveCurrentData();
+      const obj = { subjectList, appData, targetPath: document.getElementById("target-save-path")?.value };
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `DevNote_Backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed.subjectList && parsed.appData) {
+            subjectList = parsed.subjectList;
+            appData = parsed.appData;
+            saveToStorage();
+            loadSubject(subjectList[0].id);
+            alert("성공적으로 데이터를 복원했습니다!");
+            toggleSidebar();
+          }
+        } catch (err) { alert("JSON 파일 파싱 실패: " + err); }
+      };
+      reader.readAsText(file);
+    }
+
+    // Attach UI Event Handlers
+    function attachEvents() {
+      document.getElementById("btn-open-sidebar").addEventListener("click", toggleSidebar);
+      document.getElementById("btn-close-sidebar").addEventListener("click", toggleSidebar);
+      document.getElementById("sidebar-overlay").addEventListener("click", toggleSidebar);
+
+      document.getElementById("btn-export-pdf").addEventListener("click", exportToPDF);
+      document.getElementById("btn-save-data").addEventListener("click", saveCurrentData);
+      document.getElementById("btn-run-code").addEventListener("click", executeCurrentCode);
+      document.getElementById("btn-open-card-modal").addEventListener("click", () => openCardModal());
+
+      document.getElementById("btn-cancel-subject").addEventListener("click", closeSubjectModal);
+      document.getElementById("btn-create-subject").addEventListener("click", createNewSubject);
+
+      document.getElementById("btn-cancel-card").addEventListener("click", closeCardModal);
+      document.getElementById("btn-save-card").addEventListener("click", saveCardFromModal);
+
+      document.getElementById("btn-export-current-md").addEventListener("click", exportCurrentMarkdownFile);
+      document.getElementById("btn-export-zip").addEventListener("click", exportHierarchyZip);
+      document.getElementById("btn-export-json").addEventListener("click", exportDataJSON);
+      document.getElementById("btn-import-json-trigger").addEventListener("click", () => document.getElementById("import-file-input").click());
+      document.getElementById("import-file-input").addEventListener("change", importDataJSON);
+
+      document.getElementById("search-input").addEventListener("input", (e) => renderCards(e.target.value));
+
+      // Auth Modal Events
+      document.getElementById("btn-close-auth-modal").addEventListener("click", closeAuthModal);
+      document.getElementById("btn-cancel-auth").addEventListener("click", closeAuthModal);
+      document.getElementById("btn-cancel-signup").addEventListener("click", closeAuthModal);
+      document.getElementById("tab-auth-login").addEventListener("click", () => switchAuthTab("login"));
+      document.getElementById("tab-auth-signup").addEventListener("click", () => switchAuthTab("signup"));
+      document.getElementById("btn-do-login").addEventListener("click", handleLogin);
+      document.getElementById("btn-do-signup").addEventListener("click", handleSignup);
+
+      // Markdown Toolbar Insert
+      document.querySelectorAll("#markdown-toolbar .tool-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const insertText = btn.getAttribute("data-insert");
+          const textarea = document.getElementById("note-input");
+          if (!textarea || !insertText) return;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          textarea.value = textarea.value.substring(0, start) + insertText + textarea.value.substring(end);
+          textarea.focus();
+        });
+      });
+
+      // Mobile Tabs
+      document.getElementById("tab-btn-dict").addEventListener("click", () => switchMobileTab("panel-dict", "tab-btn-dict"));
+      document.getElementById("tab-btn-note").addEventListener("click", () => switchMobileTab("panel-note", "tab-btn-note"));
+      document.getElementById("tab-btn-runner").addEventListener("click", () => switchMobileTab("panel-runner", "tab-btn-runner"));
+    }
+
+    function switchMobileTab(panelId, tabId) {
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("mobile-active"));
+      document.querySelectorAll(".tab-item").forEach(t => t.classList.remove("active"));
+      document.getElementById(panelId).classList.add("mobile-active");
+      document.getElementById(tabId).classList.add("active");
+    }
+
+    // Initialization
     window.addEventListener("DOMContentLoaded", async () => {
-      const loaded = await loadFromSupabase();
-      if (!loaded) {
-        initData();
+      loadFromStorage();
+
+      if (supabaseClient) {
+        try {
+          const { data } = await supabaseClient.auth.getSession();
+          if (data && data.session) {
+            currentUser = data.session.user;
+          }
+          supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            currentUser = session ? session.user : null;
+            updateAuthUI();
+            if (session) {
+              await loadFromSupabase();
+              loadSubject(currentSubject);
+            }
+          });
+        } catch (e) { console.error("Auth Listener Error:", e); }
       }
+
+      updateAuthUI();
+      const loaded = await loadFromSupabase();
       renderSubjectNav();
       loadSubject(currentSubject);
-      attachAllEvents();
+      attachEvents();
     });
   </script>
 </body>
 </html>
-
