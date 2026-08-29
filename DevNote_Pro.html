@@ -468,7 +468,7 @@
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 4px;
       padding: 8px;
-      font-family: monospace;
+      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
       font-size: 0.75rem;
       color: #38bdf8;
       white-space: pre-wrap;
@@ -491,18 +491,18 @@
     }
 
     .note-textarea {
-      flex: 1;
-      width: 100%;
-      background: var(--bg-panel);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-main);
-      padding: 14px;
-      font-family: monospace;
-      font-size: 0.88rem;
-      line-height: 1.6;
-      resize: none;
-    }
+  flex: 1;
+  width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 14px;
+  font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace !important;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  resize: none;
+}
     .note-textarea:focus { outline: 1px solid var(--primary); }
 
     .note-preview-box {
@@ -595,18 +595,18 @@
     }
 
     .code-editor-box {
-      height: 220px;
-      background: var(--bg-main);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      color: #f8fafc;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 0.82rem;
-      line-height: 1.5;
-      resize: none;
-      width: 100%;
-    }
+  height: 220px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: #f8fafc;
+  padding: 10px;
+  font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace !important;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  resize: none;
+  width: 100%;
+}
 
     .preview-box {
       flex: 1;
@@ -627,7 +627,7 @@
     }
 
     .console-out {
-      font-family: monospace;
+      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
       font-size: 0.78rem;
       color: #38bdf8;
       white-space: pre-wrap;
@@ -752,7 +752,7 @@
       color: #fff;
       padding: 7px 9px;
       border-radius: 4px;
-      font-family: monospace;
+      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
       font-size: 0.75rem;
       width: 100%;
     }
@@ -762,7 +762,7 @@
       border: 1px solid var(--border-color);
       border-radius: 6px;
       padding: 10px;
-      font-family: monospace;
+      font-family: 'Consolas', 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
       font-size: 0.72rem;
       line-height: 1.5;
       color: #cbd5e1;
@@ -972,6 +972,7 @@
             <button class="tool-btn" data-insert="- ">목록</button>
             <button class="tool-btn" data-insert="```\n\n```">코드블록</button>
             <button class="tool-btn" data-insert="**강조**">강조</button>
+            <button class="tool-btn" data-insert="\" style="color:var(--accent); font-weight:bold;">\ 역슬래시</button>
           </div>
           <textarea id="note-input" class="note-textarea" placeholder="여기에 마크다운 학습 노트를 작성하세요...&#10;&#10;[노트 명령어]&#10;### : 이 다음 줄부터 다음 페이지로 인식&#10;+++ : 이 줄 사이의 텍스트 그린 색상 하이라이트&#10;=== : 이 줄 사이의 텍스트 퍼플 색상 하이라이트"></textarea>
           <div id="note-preview-box" class="note-preview-box"></div>
@@ -1972,6 +1973,20 @@
     }
 
     // Attach UI Event Handlers
+    
+    // Auto-convert Korean Won symbol (₩) to real Backslash (\) for Korean Keyboards
+    function convertWonToBackslash(el) {
+      if (!el) return;
+      el.addEventListener("input", () => {
+        if (el.value.includes('₩')) {
+          const start = el.selectionStart;
+          const end = el.selectionEnd;
+          el.value = el.value.replace(/₩/g, '\\');
+          el.setSelectionRange(start, end);
+        }
+      });
+    }
+  
     function attachEvents() {
       // Landing Screen Auth Events
       document.getElementById("tab-landing-login").addEventListener("click", () => switchLandingTab("login"));
@@ -2013,6 +2028,10 @@
       document.getElementById("import-file-input").addEventListener("change", importDataJSON);
 
       document.getElementById("search-input").addEventListener("input", (e) => renderCards(e.target.value));
+      convertWonToBackslash(document.getElementById("note-input"));
+      convertWonToBackslash(document.getElementById("code-editor"));
+      convertWonToBackslash(document.getElementById("card-code-input"));
+      convertWonToBackslash(document.getElementById("card-desc-input"));
 
       // Markdown Toolbar Insert
       document.querySelectorAll("#markdown-toolbar .tool-btn").forEach(btn => {

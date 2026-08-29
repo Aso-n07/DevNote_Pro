@@ -892,6 +892,20 @@
     }
 
     // Attach UI Event Handlers
+    
+    // Auto-convert Korean Won symbol (₩) to real Backslash (\) for Korean Keyboards
+    function convertWonToBackslash(el) {
+      if (!el) return;
+      el.addEventListener("input", () => {
+        if (el.value.includes('₩')) {
+          const start = el.selectionStart;
+          const end = el.selectionEnd;
+          el.value = el.value.replace(/₩/g, '\\');
+          el.setSelectionRange(start, end);
+        }
+      });
+    }
+  
     function attachEvents() {
       // Landing Screen Auth Events
       document.getElementById("tab-landing-login").addEventListener("click", () => switchLandingTab("login"));
@@ -933,6 +947,10 @@
       document.getElementById("import-file-input").addEventListener("change", importDataJSON);
 
       document.getElementById("search-input").addEventListener("input", (e) => renderCards(e.target.value));
+      convertWonToBackslash(document.getElementById("note-input"));
+      convertWonToBackslash(document.getElementById("code-editor"));
+      convertWonToBackslash(document.getElementById("card-code-input"));
+      convertWonToBackslash(document.getElementById("card-desc-input"));
 
       // Markdown Toolbar Insert
       document.querySelectorAll("#markdown-toolbar .tool-btn").forEach(btn => {
