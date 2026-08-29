@@ -813,6 +813,17 @@
   </div>
 
   <script>
+    // HTML Escaping Utility
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     // Supabase Configuration
     const SUPABASE_URL = "https://bxbihhulzbpdxdijphil.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4YmloaHVsemJwZHhkaWpwaGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NzA5NTcsImV4cCI6MjEwMzU0Njk1N30.k1BsY6_XgXwnWjG6gpYmuPG5uNPSJFFRFr6TH1yfpYE";
@@ -1050,7 +1061,7 @@
       subjectList.forEach(sub => {
         const btn = document.createElement("button");
         btn.className = `subject-tab ${sub.id === currentSubject ? "active" : ""}`;
-        btn.innerHTML = `<i class="fa-solid fa-bookmark"></i> ${sub.name}`;
+        btn.innerHTML = `<i class="fa-solid fa-bookmark"></i> ${escapeHTML(sub.name)}`;
         btn.onclick = () => loadSubject(sub.id);
         nav.appendChild(btn);
       });
@@ -1099,14 +1110,14 @@
         div.className = "dict-card";
         div.innerHTML = `
           <div class="card-title-row">
-            <div class="card-title">${c.name}</div>
+            <div class="card-title">${escapeHTML(c.name)}</div>
             <div class="card-actions">
               <button class="card-action-btn" onclick="openCardModal(${idx})"><i class="fa-solid fa-pen"></i></button>
               <button class="card-action-btn delete" onclick="deleteCard(${idx})"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
-          <div class="card-desc">${c.desc}</div>
-          ${c.code ? `<div class="code-snippet">${c.code}</div>` : ""}
+          <div class="card-desc">${escapeHTML(c.desc)}</div>
+          ${c.code ? `<div class="code-snippet">${escapeHTML(c.code)}</div>` : ""}
         `;
         list.appendChild(div);
       });
@@ -1301,9 +1312,9 @@
       element.style.padding = "20px";
       element.style.color = "#000";
       element.innerHTML = `
-        <h1 style="font-size:1.5rem; margin-bottom:10px;">DevNote - ${sub ? sub.name : '학습노트'}</h1>
+        <h1 style="font-size:1.5rem; margin-bottom:10px;">DevNote - ${sub ? escapeHTML(sub.name) : '학습노트'}</h1>
         <hr style="margin-bottom:15px;"/>
-        <pre style="white-space:pre-wrap; font-family:sans-serif; font-size:1rem; line-height:1.6;">${noteContent}</pre>
+        <pre style="white-space:pre-wrap; font-family:sans-serif; font-size:1rem; line-height:1.6;">${escapeHTML(noteContent)}</pre>
       `;
       const opt = {
         margin: 10,
