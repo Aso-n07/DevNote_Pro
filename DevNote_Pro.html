@@ -1152,7 +1152,7 @@
 
     // Username to Internal Email Helper
     function formatUserEmail(username) {
-      return `${username.toLowerCase()}@devnote.internal`;
+      return `${username.toLowerCase()}@devnote.com`;
     }
 
     // Register / Sign Up
@@ -1526,8 +1526,7 @@
       const code = document.getElementById("code-editor").value;
       const frame = document.getElementById("web-preview");
       if (!frame) return;
-      const doc = frame.contentDocument || frame.contentWindow.document;
-      doc.open(); doc.write(code); doc.close();
+      frame.srcdoc = code;
     }
 
     async function renderMermaidDiagram() {
