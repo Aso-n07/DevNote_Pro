@@ -1194,16 +1194,15 @@
           html += `<div style="background:#f3e8ff; border-left:5px solid #9333ea; padding:12px 16px; border-radius:6px; margin:14px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(innerText)}</div>`;
         } else if (line.startsWith('# ')) {
           if (inList) { html += '</ul>'; inList = false; }
-          html += `<h1 style="font-size:1.6rem; font-weight:800; color:#000000; margin:14px 0 10px 0; border-bottom:2px solid #000000; padding-bottom:6px;">${escapeHTML(line.substring(2))}</h1>`;
+          html += `<h1 style="font-size:1.6rem; font-weight:800; color:#000000; margin:0 0 10px 0; border-bottom:2px solid #000000; padding-bottom:6px;">${escapeHTML(line.substring(2))}</h1>`;
         } else if (line.startsWith('## ')) {
           if (inList) { html += '</ul>'; inList = false; }
-          html += `<h2 style="font-size:1.25rem; font-weight:700; color:#000000; margin:12px 0 8px 0;">${escapeHTML(line.substring(3))}</h2>`;
+          html += `<h2 style="font-size:1.25rem; font-weight:700; color:#000000; margin:0 0 8px 0;">${escapeHTML(line.substring(3))}</h2>`;
         } else if (line.startsWith('- ')) {
           if (!inList) { html += '<ul style="padding-left:22px; margin:8px 0; color:#000000;">'; inList = true; }
           html += `<li style="color:#000000; font-size:1rem; margin-bottom:4px;">${escapeHTML(line.substring(2))}</li>`;
         } else if (line.trim() === '') {
           if (inList) { html += '</ul>'; inList = false; }
-          // Do not append blank <br/> lines at page ends to prevent unwanted page overflows
         } else {
           if (inList) { html += '</ul>'; inList = false; }
           html += `<p style="margin:4px 0; color:#000000; font-size:1rem; line-height:1.6;">${escapeHTML(line)}</p>`;
@@ -1214,8 +1213,8 @@
     }
 
     // Custom Note Parser Specifically Optimized for PDF Export
-    // Splits note text by '###' lines into separate page blocks.
-    // Explicitly inserts page breaks ONLY between non-last chunks to prevent extra 3rd blank pages.
+    // Each A4 page container is strictly sized to min-height: 265mm.
+    // Guaranteed 100% top positioning for the first element on every new page!
     function parseNoteMarkdownForPDF(rawText) {
       if (!rawText) return "";
       const validChunks = rawText.split(/^\s*###\s*$/gm).filter(c => c.trim().length > 0);
@@ -1224,11 +1223,13 @@
       validChunks.forEach((chunk, index) => {
         const isLastPage = (index === validChunks.length - 1);
         const pageHtml = parseSinglePagePDFMarkdown(chunk);
+        const pageBreakStyle = isLastPage ? "" : "page-break-after: always; break-after: page;";
         
-        fullHtml += `<div>${pageHtml}</div>`;
-        if (!isLastPage) {
-          fullHtml += `<div class="html2pdf__page-break" style="page-break-before: always; break-before: page;"></div>`;
-        }
+        fullHtml += `
+          <div class="pdf-a4-page" style="min-height: 265mm; ${pageBreakStyle} box-sizing: border-box; padding-top: 0px; margin: 0;">
+            ${pageHtml}
+          </div>
+        `;
       });
 
       return fullHtml;
