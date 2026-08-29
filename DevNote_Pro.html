@@ -1186,12 +1186,12 @@
           if (inList) { html += '</ul>'; inList = false; }
           const idx = parseInt(trimmed.replace('___HIGHLIGHT_GREEN_', '').replace('___', ''));
           const innerText = greenBlocks[idx] || '';
-          html += `<div style="background:#dcfce7; border-left:5px solid #16a34a; padding:12px 16px; border-radius:6px; margin:14px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(innerText)}</div>`;
+          html += `<div style="background:#dcfce7; border-left:5px solid #16a34a; padding:12px 16px; border-radius:6px; margin:10px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(innerText)}</div>`;
         } else if (trimmed.startsWith('___HIGHLIGHT_PURPLE_') && trimmed.endsWith('___')) {
           if (inList) { html += '</ul>'; inList = false; }
           const idx = parseInt(trimmed.replace('___HIGHLIGHT_PURPLE_', '').replace('___', ''));
           const innerText = purpleBlocks[idx] || '';
-          html += `<div style="background:#f3e8ff; border-left:5px solid #9333ea; padding:12px 16px; border-radius:6px; margin:14px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(innerText)}</div>`;
+          html += `<div style="background:#f3e8ff; border-left:5px solid #9333ea; padding:12px 16px; border-radius:6px; margin:10px 0; font-weight:600; white-space:pre-wrap;">${escapeHTML(innerText)}</div>`;
         } else if (line.startsWith('# ')) {
           if (inList) { html += '</ul>'; inList = false; }
           html += `<h1 style="font-size:1.6rem; font-weight:800; color:#000000; margin:0 0 10px 0; border-bottom:2px solid #000000; padding-bottom:6px;">${escapeHTML(line.substring(2))}</h1>`;
@@ -1213,8 +1213,7 @@
     }
 
     // Custom Note Parser Specifically Optimized for PDF Export
-    // Each A4 page container is strictly sized to min-height: 265mm.
-    // Guaranteed 100% top positioning for the first element on every new page!
+    // Clean section wrapper without min-height hacks or double page breaks.
     function parseNoteMarkdownForPDF(rawText) {
       if (!rawText) return "";
       const validChunks = rawText.split(/^\s*###\s*$/gm).filter(c => c.trim().length > 0);
@@ -1226,7 +1225,7 @@
         const pageBreakStyle = isLastPage ? "" : "page-break-after: always; break-after: page;";
         
         fullHtml += `
-          <div class="pdf-a4-page" style="min-height: 265mm; ${pageBreakStyle} box-sizing: border-box; padding-top: 0px; margin: 0;">
+          <div class="pdf-page-chunk" style="${pageBreakStyle} margin: 0; padding: 0;">
             ${pageHtml}
           </div>
         `;
@@ -1478,7 +1477,7 @@
       }
 
       if (data.session && data.user) {
-        currentUser = data.user;
+        currentUser = data.session.user;
         currentUsername = profile ? profile.username : username;
 
         // Generate unique Session ID for duplicate login check
