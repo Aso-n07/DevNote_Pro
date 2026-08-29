@@ -574,25 +574,26 @@
       if (!list) return;
       list.innerHTML = "";
       const data = appData[currentSubject] || { cards: [] };
-      const cards = (data.cards || []).filter(c => 
-        c.name.toLowerCase().includes(filterText.toLowerCase()) || 
-        c.desc.toLowerCase().includes(filterText.toLowerCase())
-      );
+      const allCards = data.cards || [];
 
-      if (cards.length === 0) {
-        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:20px 0;">등록된 사전에 카드가 없습니다.</div>`;
-        return;
-      }
+      let hasMatch = false;
 
-      cards.forEach((c, idx) => {
+      allCards.forEach((c, realIdx) => {
+        const matchesSearch = !filterText || 
+          c.name.toLowerCase().includes(filterText.toLowerCase()) || 
+          c.desc.toLowerCase().includes(filterText.toLowerCase());
+
+        if (!matchesSearch) return;
+        hasMatch = true;
+
         const div = document.createElement("div");
         div.className = "dict-card";
         div.innerHTML = `
           <div class="card-title-row">
             <div class="card-title">${escapeHTML(c.name)}</div>
             <div class="card-actions">
-              <button class="card-action-btn" onclick="openCardModal(${idx})"><i class="fa-solid fa-pen"></i></button>
-              <button class="card-action-btn delete" onclick="deleteCard(${idx})"><i class="fa-solid fa-trash"></i></button>
+              <button class="card-action-btn" onclick="openCardModal(${realIdx})"><i class="fa-solid fa-pen"></i></button>
+              <button class="card-action-btn delete" onclick="deleteCard(${realIdx})"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
           <div class="card-desc">${escapeHTML(c.desc)}</div>
@@ -600,6 +601,10 @@
         `;
         list.appendChild(div);
       });
+
+      if (!hasMatch) {
+        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:20px 0;">등록된 사전에 카드가 없습니다.</div>`;
+      }
     }
 
     function openCardModal(idx = null) {
