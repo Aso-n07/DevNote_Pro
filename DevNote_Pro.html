@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>DevNote Pro - 인터랙티브 학습 노트 & 사전</title>
+  <title>DevNote Pro - 스마트 학습 노트 & 사전</title>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -42,7 +42,185 @@
       position: relative;
     }
 
-    /* Top Header */
+    /* Screen Views Control */
+    .screen-view {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+    }
+    .screen-view.active-screen {
+      display: flex;
+    }
+
+    /* ========================================================= */
+    /* LANDING / AUTH SCREEN STYLES                              */
+    /* ========================================================= */
+    .auth-landing-bg {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0f172a 70%);
+      padding: 20px;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .auth-landing-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .auth-hero-section {
+      flex: 1.2;
+      padding: 40px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(56, 189, 248, 0.05) 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .auth-hero-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .auth-hero-brand i { color: var(--primary); font-size: 2rem; }
+
+    .auth-hero-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-top: 24px;
+      color: #f8fafc;
+    }
+    .auth-hero-title span { color: var(--accent); }
+
+    .auth-hero-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .feature-item i { color: var(--success); font-size: 1.1rem; margin-top: 2px; }
+
+    .auth-form-section {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+    .auth-tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .auth-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .auth-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .auth-input {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      transition: border-color 0.2s;
+    }
+    .auth-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .auth-submit-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 13px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .auth-submit-btn:hover { background: var(--primary-hover); }
+
+    .msg-box {
+      font-size: 0.82rem;
+      padding: 10px 12px;
+      border-radius: 6px;
+      display: none;
+      margin-top: 10px;
+    }
+    .msg-box.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid var(--danger); }
+    .msg-box.success { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid var(--success); }
+
+    @media (max-width: 768px) {
+      .auth-landing-card { flex-direction: column; }
+      .auth-hero-section { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 24px; }
+      .auth-form-section { padding: 24px; }
+    }
+
+    /* ========================================================= */
+    /* WORKSPACE APP STYLES                                      */
+    /* ========================================================= */
     header {
       background-color: var(--bg-panel);
       border-bottom: 1px solid var(--border-color);
@@ -101,6 +279,19 @@
       padding: 5px 10px;
       border-radius: 6px;
       border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .user-badge {
+      font-size: 0.8rem;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--accent);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -426,26 +617,6 @@
       align-items: center;
     }
 
-    .modal-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 6px;
-    }
-    .modal-tab {
-      flex: 1;
-      padding: 8px;
-      text-align: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-    }
-    .modal-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-      font-weight: 600;
-    }
-
     .form-group {
       display: flex;
       flex-direction: column;
@@ -595,137 +766,171 @@
 </head>
 <body>
 
-  <!-- Top Header -->
-  <header>
-    <div class="header-top">
-      <div class="brand-group">
-        <button id="btn-open-sidebar" class="menu-toggle-btn" title="사이드바 메뉴"><i class="fa-solid fa-bars"></i></button>
-        <div class="brand"><i class="fa-solid fa-book-bookmark"></i> DevNote Pro</div>
-      </div>
-      <div class="header-right-group">
-        <div id="save-status" class="header-status-badge">
-          <i class="fa-solid fa-cloud"></i> 준비됨
+  <!-- ========================================================= -->
+  <!-- 1. LANDING / AUTHENTICATION SCREEN                        -->
+  <!-- ========================================================= -->
+  <div id="auth-landing-screen" class="screen-view active-screen">
+    <div class="auth-landing-bg">
+      <div class="auth-landing-card">
+        <!-- Left Hero Section -->
+        <div class="auth-hero-section">
+          <div>
+            <div class="auth-hero-brand">
+              <i class="fa-solid fa-book-bookmark"></i> DevNote Pro
+            </div>
+            <div class="auth-hero-title">
+              스마트한 개발자를 위한<br />
+              <span>인터랙티브 학습 노트 & 사전</span>
+            </div>
+          </div>
+          <div class="auth-hero-features">
+            <div class="feature-item">
+              <i class="fa-solid fa-circle-check"></i>
+              <div><strong>아이디 기반 클라우드 동기화</strong><br />어디서나 본인의 학습 데이터와 사전 카드를 불러옵니다.</div>
+            </div>
+            <div class="feature-item">
+              <i class="fa-solid fa-shield-halved"></i>
+              <div><strong>중복 로그인 방지 세션 보안</strong><br />동일 아이디의 이중 로그인을 실시간 감지하여 안심 보안을 제공합니다.</div>
+            </div>
+            <div class="feature-item">
+              <i class="fa-solid fa-code"></i>
+              <div><strong>통합 멀티 실습실</strong><br />HTML/JS 웹 프리뷰, 파이썬 Pyodide, Mermaid 시각화를 지원합니다.</div>
+            </div>
+          </div>
         </div>
-        <div id="auth-status-container">
-          <!-- Auth buttons rendered dynamically -->
-        </div>
-      </div>
-    </div>
-    <div class="subject-nav-wrapper" id="subject-nav">
-      <!-- Subject tabs rendered dynamically -->
-    </div>
-  </header>
 
-  <!-- Mobile Tab Bar -->
-  <div class="mobile-tab-bar">
-    <div class="tab-item active" id="tab-btn-dict"><i class="fa-solid fa-book"></i> 사전</div>
-    <div class="tab-item" id="tab-btn-note"><i class="fa-solid fa-pen-to-square"></i> 노트</div>
-    <div class="tab-item" id="tab-btn-runner"><i class="fa-solid fa-play"></i> 실습실</div>
-  </div>
+        <!-- Right Auth Form Section -->
+        <div class="auth-form-section">
+          <div class="auth-tabs">
+            <div class="auth-tab-btn active" id="tab-landing-login">로그인</div>
+            <div class="auth-tab-btn" id="tab-landing-signup">회원가입</div>
+          </div>
 
-  <!-- Main 3-Column Layout -->
-  <div class="main-container">
-    <!-- Panel 1: Dictionary & Cards -->
-    <div class="panel panel-dict mobile-active" id="panel-dict">
-      <div class="panel-header">
-        <div class="panel-title"><i class="fa-solid fa-list-check" style="color:var(--accent);"></i> 핵심 기능 사전</div>
-        <button class="tool-btn" id="btn-open-card-modal"><i class="fa-solid fa-plus"></i> 카드리뷰</button>
-      </div>
-      <div class="search-box">
-        <input type="text" id="search-input" class="search-input" placeholder="기능, 키워드 검색..." />
-      </div>
-      <div class="card-list" id="card-list">
-        <!-- Cards rendered dynamically -->
-      </div>
-    </div>
+          <!-- Login Form -->
+          <div id="form-landing-login" class="auth-input-group">
+            <div class="auth-field">
+              <label class="auth-label">아이디 (Username)</label>
+              <input type="text" id="landing-login-username" class="auth-input" placeholder="아이디를 입력하세요" />
+            </div>
+            <div class="auth-field">
+              <label class="auth-label">비밀번호</label>
+              <input type="password" id="landing-login-password" class="auth-input" placeholder="비밀번호를 입력하세요" />
+            </div>
+            <div id="landing-login-error" class="msg-box error"></div>
+            <button id="btn-landing-login" class="auth-submit-btn">
+              <i class="fa-solid fa-right-to-bracket"></i> 로그인
+            </button>
+          </div>
 
-    <!-- Panel 2: Note Editor -->
-    <div class="panel panel-note" id="panel-note">
-      <div class="panel-header">
-        <div class="panel-title"><i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 인터랙티브 학습 노트</div>
-        <div style="display:flex; gap:6px;">
-          <button class="tool-btn" id="btn-export-pdf"><i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> PDF 추출</button>
-          <button class="tool-btn" id="btn-save-data" style="background:var(--primary); color:#fff;"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
-        </div>
-      </div>
-      <div class="note-editor-wrapper">
-        <div class="toolbar-row" id="markdown-toolbar">
-          <button class="tool-btn" data-insert="###\n">### 구분선</button>
-          <button class="tool-btn" data-insert="# ">H1</button>
-          <button class="tool-btn" data-insert="## ">H2</button>
-          <button class="tool-btn" data-insert="- ">목록</button>
-          <button class="tool-btn" data-insert="```\n\n```">코드블록</button>
-          <button class="tool-btn" data-insert="**강조**">강조</button>
-        </div>
-        <textarea id="note-input" class="note-textarea" placeholder="여기에 마크다운 학습 노트를 작성하세요..."></textarea>
-      </div>
-    </div>
-
-    <!-- Panel 3: Code Runner & Visualizer -->
-    <div class="panel panel-runner" id="panel-runner">
-      <div class="panel-header">
-        <div class="panel-title"><i class="fa-solid fa-terminal" style="color:var(--success);"></i> 코드 실행 & 시각화</div>
-        <button class="tool-btn" id="btn-run-code" style="background:var(--success); color:#fff;"><i class="fa-solid fa-play"></i> 실행</button>
-      </div>
-      <div class="runner-body">
-        <textarea id="code-editor" class="code-editor-box" placeholder="실행할 코드를 입력하세요..."></textarea>
-        <div class="preview-box">
-          <iframe id="web-preview" class="preview-frame" style="display:none;"></iframe>
-          <div id="diagram-view" style="display:none;"></div>
-          <pre id="console-output" class="console-out">결과가 여기에 표시됩니다...</pre>
+          <!-- Sign Up Form -->
+          <div id="form-landing-signup" class="auth-input-group" style="display:none;">
+            <div class="auth-field">
+              <label class="auth-label">사용할 아이디 (Username)</label>
+              <input type="text" id="landing-signup-username" class="auth-input" placeholder="영문, 숫자 조합 아이디" />
+            </div>
+            <div class="auth-field">
+              <label class="auth-label">비밀번호</label>
+              <input type="password" id="landing-signup-password" class="auth-input" placeholder="최소 6자 이상" />
+            </div>
+            <div class="auth-field">
+              <label class="auth-label">비밀번호 확인</label>
+              <input type="password" id="landing-signup-confirm" class="auth-input" placeholder="비밀번호 재입력" />
+            </div>
+            <div id="landing-signup-error" class="msg-box error"></div>
+            <div id="landing-signup-success" class="msg-box success"></div>
+            <button id="btn-landing-signup" class="auth-submit-btn">
+              <i class="fa-solid fa-user-plus"></i> 회원가입 완료
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Auth Modal -->
-  <div class="modal-overlay" id="auth-modal">
-    <div class="modal-card">
-      <div class="modal-title">
-        <span><i class="fa-solid fa-user-lock" style="color:var(--primary);"></i> 사용자 인증</span>
-        <button class="card-action-btn" id="btn-close-auth-modal"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-tabs">
-        <div class="modal-tab active" id="tab-auth-login">로그인</div>
-        <div class="modal-tab" id="tab-auth-signup">회원가입</div>
-      </div>
-      
-      <!-- Login Form -->
-      <div id="form-auth-login" class="form-group">
-        <div class="form-group">
-          <label class="form-label">이메일 주소</label>
-          <input type="email" id="login-email" class="form-input" placeholder="name@example.com" />
+  <!-- ========================================================= -->
+  <!-- 2. MAIN WORKSPACE APP SCREEN                              -->
+  <!-- ========================================================= -->
+  <div id="app-workspace-screen" class="screen-view">
+    <!-- Top Header -->
+    <header>
+      <div class="header-top">
+        <div class="brand-group">
+          <button id="btn-open-sidebar" class="menu-toggle-btn" title="사이드바 메뉴"><i class="fa-solid fa-bars"></i></button>
+          <div class="brand"><i class="fa-solid fa-book-bookmark"></i> DevNote Pro</div>
         </div>
-        <div class="form-group">
-          <label class="form-label">비밀번호</label>
-          <input type="password" id="login-password" class="form-input" placeholder="••••••••" />
+        <div class="header-right-group">
+          <div id="save-status" class="header-status-badge">
+            <i class="fa-solid fa-cloud"></i> 저장 준비
+          </div>
+          <div class="user-badge" id="workspace-user-badge">
+            <i class="fa-solid fa-user-check"></i> <span id="current-username-display">게스트</span>
+          </div>
+          <button class="auth-btn logout" id="btn-workspace-logout"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
         </div>
-        <div id="auth-error-msg" style="color:var(--danger); font-size:0.78rem; display:none;"></div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" id="btn-cancel-auth">취소</button>
-          <button class="btn btn-primary" id="btn-do-login">로그인</button>
+      </div>
+      <div class="subject-nav-wrapper" id="subject-nav">
+        <!-- Subject tabs rendered dynamically -->
+      </div>
+    </header>
+
+    <!-- Mobile Tab Bar -->
+    <div class="mobile-tab-bar">
+      <div class="tab-item active" id="tab-btn-dict"><i class="fa-solid fa-book"></i> 사전</div>
+      <div class="tab-item" id="tab-btn-note"><i class="fa-solid fa-pen-to-square"></i> 노트</div>
+      <div class="tab-item" id="tab-btn-runner"><i class="fa-solid fa-play"></i> 실습실</div>
+    </div>
+
+    <!-- Main 3-Column Layout -->
+    <div class="main-container">
+      <!-- Panel 1: Dictionary & Cards -->
+      <div class="panel panel-dict mobile-active" id="panel-dict">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-list-check" style="color:var(--accent);"></i> 핵심 기능 사전</div>
+          <button class="tool-btn" id="btn-open-card-modal"><i class="fa-solid fa-plus"></i> 카드리뷰</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="search-input" class="search-input" placeholder="기능, 키워드 검색..." />
+        </div>
+        <div class="card-list" id="card-list">
+          <!-- Cards rendered dynamically -->
         </div>
       </div>
 
-      <!-- Signup Form -->
-      <div id="form-auth-signup" class="form-group" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">이메일 주소</label>
-          <input type="email" id="signup-email" class="form-input" placeholder="name@example.com" />
+      <!-- Panel 2: Note Editor -->
+      <div class="panel panel-note" id="panel-note">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-file-lines" style="color:var(--primary);"></i> 인터랙티브 학습 노트</div>
+          <div style="display:flex; gap:6px;">
+            <button class="tool-btn" id="btn-export-pdf"><i class="fa-solid fa-file-pdf" style="color:#ef4444;"></i> PDF 추출</button>
+            <button class="tool-btn" id="btn-save-data" style="background:var(--primary); color:#fff;"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">비밀번호</label>
-          <input type="password" id="signup-password" class="form-input" placeholder="최소 6자 이상" />
+        <div class="note-editor-wrapper">
+          <div class="toolbar-row" id="markdown-toolbar">
+            <button class="tool-btn" data-insert="###\n">### 구분선</button>
+            <button class="tool-btn" data-insert="# ">H1</button>
+            <button class="tool-btn" data-insert="## ">H2</button>
+            <button class="tool-btn" data-insert="- ">목록</button>
+            <button class="tool-btn" data-insert="```\n\n```">코드블록</button>
+            <button class="tool-btn" data-insert="**강조**">강조</button>
+          </div>
+          <textarea id="note-input" class="note-textarea" placeholder="여기에 마크다운 학습 노트를 작성하세요..."></textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label">비밀번호 확인</label>
-          <input type="password" id="signup-password-confirm" class="form-input" placeholder="비밀번호 재입력" />
+      </div>
+
+      <!-- Panel 3: Code Runner & Visualizer -->
+      <div class="panel panel-runner" id="panel-runner">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-terminal" style="color:var(--success);"></i> 코드 실행 & 시각화</div>
+          <button class="tool-btn" id="btn-run-code" style="background:var(--success); color:#fff;"><i class="fa-solid fa-play"></i> 실행</button>
         </div>
-        <div id="signup-error-msg" style="color:var(--danger); font-size:0.78rem; display:none;"></div>
-        <div id="signup-success-msg" style="color:var(--success); font-size:0.78rem; display:none;"></div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" id="btn-cancel-signup">취소</button>
-          <button class="btn btn-primary" id="btn-do-signup">회원가입</button>
+        <div class="runner-body">
+          <textarea id="code-editor" class="code-editor-box" placeholder="실행할 코드를 입력하세요..."></textarea>
+          <div class="preview-box">
+            <iframe id="web-preview" class="preview-frame" style="display:none;"></iframe>
+            <div id="diagram-view" style="display:none;"></div>
+            <pre id="console-output" class="console-out">결과가 여기에 표시됩니다...</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -829,6 +1034,9 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4YmloaHVsemJwZHhkaWpwaGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NzA5NTcsImV4cCI6MjEwMzU0Njk1N30.k1BsY6_XgXwnWjG6gpYmuPG5uNPSJFFRFr6TH1yfpYE";
     let supabaseClient = null;
     let currentUser = null;
+    let currentUsername = "";
+    let currentSessionId = "";
+    let sessionCheckTimer = null;
 
     if (window.supabase) {
       try {
@@ -886,6 +1094,13 @@
     let currentSubject = "sub_html5";
     let currentEditCardIdx = null;
 
+    // View Screen Switcher
+    function showScreen(screenId) {
+      document.querySelectorAll(".screen-view").forEach(s => s.classList.remove("active-screen"));
+      const target = document.getElementById(screenId);
+      if (target) target.classList.add("active-screen");
+    }
+
     // Storage Management
     function saveToStorage() {
       try {
@@ -903,14 +1118,13 @@
       } catch (e) { console.error("LocalStorage load error:", e); }
     }
 
-    // Supabase Sync Management
+    // Supabase Cloud Sync Management
     async function saveToSupabase() {
-      if (!supabaseClient) return;
-      const targetId = currentUser ? currentUser.id : 'guest';
+      if (!supabaseClient || !currentUser) return;
       try {
         const payload = {
-          id: targetId,
-          user_id: currentUser ? currentUser.id : null,
+          id: currentUser.id,
+          user_id: currentUser.id,
           data: { subjectList, appData, targetPath: document.getElementById("target-save-path")?.value },
           updated_at: new Date().toISOString()
         };
@@ -919,10 +1133,9 @@
     }
 
     async function loadFromSupabase() {
-      if (!supabaseClient) return false;
-      const targetId = currentUser ? currentUser.id : 'guest';
+      if (!supabaseClient || !currentUser) return false;
       try {
-        const { data, error } = await supabaseClient.from('devnote_data').select('*').eq('id', targetId).single();
+        const { data, error } = await supabaseClient.from('devnote_data').select('*').eq('id', currentUser.id).single();
         if (error || !data || !data.data) return false;
         if (data.data.subjectList) subjectList = data.data.subjectList;
         if (data.data.appData) appData = data.data.appData;
@@ -933,66 +1146,33 @@
       } catch (err) { console.error("Supabase Load Error:", err); return false; }
     }
 
-    // Auth Management
-    function updateAuthUI() {
-      const container = document.getElementById("auth-status-container");
-      if (!container) return;
-      if (currentUser) {
-        const emailShort = currentUser.email ? currentUser.email.split('@')[0] : '유저';
-        container.innerHTML = `
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:0.78rem; color:var(--accent); font-weight:600;"><i class="fa-solid fa-circle-user"></i> ${emailShort}</span>
-            <button class="auth-btn logout" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
-          </div>
-        `;
-        document.getElementById("btn-logout").addEventListener("click", handleLogout);
-      } else {
-        container.innerHTML = `
-          <button class="auth-btn" id="btn-open-auth-modal"><i class="fa-solid fa-user-lock"></i> 로그인 / 회원가입</button>
-        `;
-        document.getElementById("btn-open-auth-modal").addEventListener("click", () => openAuthModal());
-      }
+    // =========================================================
+    // AUTHENTICATION & CONCURRENT LOGIN PREVENTION LOGIC
+    // =========================================================
+
+    // Username to Internal Email Helper
+    function formatUserEmail(username) {
+      return `${username.toLowerCase()}@devnote.internal`;
     }
 
-    async function handleLogin() {
-      const email = document.getElementById("login-email").value.trim();
-      const password = document.getElementById("login-password").value.trim();
-      const errBox = document.getElementById("auth-error-msg");
-      errBox.style.display = "none";
+    // Register / Sign Up
+    async function handleLandingSignup() {
+      const username = document.getElementById("landing-signup-username").value.trim();
+      const password = document.getElementById("landing-signup-password").value.trim();
+      const confirmPassword = document.getElementById("landing-signup-confirm").value.trim();
+      const errBox = document.getElementById("landing-signup-error");
+      const succBox = document.getElementById("landing-signup-success");
 
-      if (!email || !password) {
-        errBox.innerText = "이메일과 비밀번호를 모두 입력해주세요.";
-        errBox.style.display = "block";
-        return;
-      }
-
-      if (!supabaseClient) {
-        errBox.innerText = "Supabase 클라이언트가 초기화되지 않았습니다.";
-        errBox.style.display = "block";
-        return;
-      }
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        errBox.innerText = "로그인 실패: " + (error.message || "이메일 또는 비밀번호를 확인하세요.");
-        errBox.style.display = "block";
-      } else {
-        closeAuthModal();
-        alert("성공적으로 로그인되었습니다!");
-      }
-    }
-
-    async function handleSignup() {
-      const email = document.getElementById("signup-email").value.trim();
-      const password = document.getElementById("signup-password").value.trim();
-      const confirm = document.getElementById("signup-password-confirm").value.trim();
-      const errBox = document.getElementById("signup-error-msg");
-      const succBox = document.getElementById("signup-success-msg");
       errBox.style.display = "none";
       succBox.style.display = "none";
 
-      if (!email || !password) {
-        errBox.innerText = "이메일과 비밀번호를 입력해주세요.";
+      if (!username || !password) {
+        errBox.innerText = "아이디와 비밀번호를 모두 입력해주세요.";
+        errBox.style.display = "block";
+        return;
+      }
+      if (!/^[a-zA-Z0-9_-]{3,20}$/.test(username)) {
+        errBox.innerText = "아이디는 3~20자의 영문, 숫자, _, - 만 사용 가능합니다.";
         errBox.style.display = "block";
         return;
       }
@@ -1001,44 +1181,177 @@
         errBox.style.display = "block";
         return;
       }
-      if (password !== confirm) {
-        errBox.innerText = "비밀번호가 일치하지 않습니다.";
+      if (password !== confirmPassword) {
+        errBox.innerText = "비밀번호 확인이 일치하지 않습니다.";
         errBox.style.display = "block";
         return;
       }
 
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (!supabaseClient) {
+        errBox.innerText = "Supabase 서버 연결 실패.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      // Check if username exists in user_profiles
+      const { data: existingProfile } = await supabaseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+      if (existingProfile) {
+        errBox.innerText = "이미 사용 중인 아이디입니다. 다른 아이디를 입력하세요.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      const email = formatUserEmail(username);
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { data: { username } }
+      });
+
       if (error) {
         errBox.innerText = "회원가입 실패: " + error.message;
         errBox.style.display = "block";
-      } else {
-        succBox.innerText = "회원가입 완료! 로그인 탭에서 로그인해주세요.";
+        return;
+      }
+
+      if (data.user) {
+        // Save to user_profiles table
+        await supabaseClient.from('user_profiles').upsert({
+          username,
+          user_id: data.user.id,
+          email
+        });
+
+        succBox.innerText = `아이디 '${username}' 회원가입 완료! 로그인 탭에서 로그인해주세요.`;
         succBox.style.display = "block";
+        document.getElementById("landing-signup-username").value = "";
+        document.getElementById("landing-signup-password").value = "";
+        document.getElementById("landing-signup-confirm").value = "";
       }
     }
 
+    // Login
+    async function handleLandingLogin() {
+      const username = document.getElementById("landing-login-username").value.trim();
+      const password = document.getElementById("landing-login-password").value.trim();
+      const errBox = document.getElementById("landing-login-error");
+      errBox.style.display = "none";
+
+      if (!username || !password) {
+        errBox.innerText = "아이디와 비밀번호를 모두 입력해주세요.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      if (!supabaseClient) {
+        errBox.innerText = "Supabase 서버 연결 실패.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      // 1. Fetch user_profiles by username
+      const { data: profile } = await supabaseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+      const email = profile ? profile.email : formatUserEmail(username);
+
+      // 2. Sign in with email & password
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        errBox.innerText = "로그인 실패: 아이디 또는 비밀번호를 확인해주세요.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      if (data.session && data.user) {
+        currentUser = data.user;
+        currentUsername = username;
+
+        // Generate unique Session ID for duplicate login check
+        currentSessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+        sessionStorage.setItem("devnote_session_id", currentSessionId);
+        sessionStorage.setItem("devnote_username", currentUsername);
+
+        // Update active session in Supabase user_sessions
+        await supabaseClient.from('user_sessions').upsert({
+          user_id: currentUser.id,
+          session_id: currentSessionId,
+          last_active: new Date().toISOString()
+        });
+
+        // Start session monitoring for duplicate login prevention
+        startSessionMonitoring();
+
+        // Load user data and switch to workspace
+        await loadFromSupabase();
+        enterWorkspace();
+      }
+    }
+
+    // Logout
     async function handleLogout() {
+      stopSessionMonitoring();
       if (supabaseClient) {
         await supabaseClient.auth.signOut();
       }
       currentUser = null;
-      updateAuthUI();
-      alert("로그아웃 되었습니다.");
+      currentUsername = "";
+      currentSessionId = "";
+      sessionStorage.removeItem("devnote_session_id");
+      sessionStorage.removeItem("devnote_username");
+
+      showScreen("auth-landing-screen");
     }
 
-    function openAuthModal(tab = "login") {
-      document.getElementById("auth-modal").classList.add("active");
-      switchAuthTab(tab);
-    }
-    function closeAuthModal() {
-      document.getElementById("auth-modal").classList.remove("active");
+    // Duplicate Login (중복 로그인) Monitoring
+    function startSessionMonitoring() {
+      stopSessionMonitoring();
+      sessionCheckTimer = setInterval(async () => {
+        if (!supabaseClient || !currentUser || !currentSessionId) return;
+        try {
+          const { data } = await supabaseClient
+            .from('user_sessions')
+            .select('session_id')
+            .eq('user_id', currentUser.id)
+            .single();
+
+          if (data && data.session_id !== currentSessionId) {
+            stopSessionMonitoring();
+            alert("⚠️ 다른 기기 또는 브라우저에서 동일한 아이디로 로그인되어 현재 세션이 종료됩니다.");
+            handleLogout();
+          }
+        } catch (e) { console.error("Session check error:", e); }
+      }, 3000); // Check every 3 seconds
     }
 
-    function switchAuthTab(tab) {
-      const tabLogin = document.getElementById("tab-auth-login");
-      const tabSignup = document.getElementById("tab-auth-signup");
-      const formLogin = document.getElementById("form-auth-login");
-      const formSignup = document.getElementById("form-auth-signup");
+    function stopSessionMonitoring() {
+      if (sessionCheckTimer) {
+        clearInterval(sessionCheckTimer);
+        sessionCheckTimer = null;
+      }
+    }
+
+    function enterWorkspace() {
+      document.getElementById("current-username-display").innerText = currentUsername || (currentUser ? currentUser.email.split('@')[0] : '유저');
+      showScreen("app-workspace-screen");
+      renderSubjectNav();
+      loadSubject(currentSubject);
+    }
+
+    // Landing Tabs Toggle
+    function switchLandingTab(tab) {
+      const tabLogin = document.getElementById("tab-landing-login");
+      const tabSignup = document.getElementById("tab-landing-signup");
+      const formLogin = document.getElementById("form-landing-login");
+      const formSignup = document.getElementById("form-landing-signup");
 
       if (tab === "login") {
         tabLogin.classList.add("active");
@@ -1400,6 +1713,23 @@
 
     // Attach UI Event Handlers
     function attachEvents() {
+      // Landing Screen Auth Events
+      document.getElementById("tab-landing-login").addEventListener("click", () => switchLandingTab("login"));
+      document.getElementById("tab-landing-signup").addEventListener("click", () => switchLandingTab("signup"));
+      document.getElementById("btn-landing-login").addEventListener("click", handleLandingLogin);
+      document.getElementById("btn-landing-signup").addEventListener("click", handleLandingSignup);
+
+      document.getElementById("landing-login-password").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleLandingLogin();
+      });
+      document.getElementById("landing-signup-confirm").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleLandingSignup();
+      });
+
+      // Workspace Logout Event
+      document.getElementById("btn-workspace-logout").addEventListener("click", handleLogout);
+
+      // Workspace Buttons
       document.getElementById("btn-open-sidebar").addEventListener("click", toggleSidebar);
       document.getElementById("btn-close-sidebar").addEventListener("click", toggleSidebar);
       document.getElementById("sidebar-overlay").addEventListener("click", toggleSidebar);
@@ -1422,15 +1752,6 @@
       document.getElementById("import-file-input").addEventListener("change", importDataJSON);
 
       document.getElementById("search-input").addEventListener("input", (e) => renderCards(e.target.value));
-
-      // Auth Modal Events
-      document.getElementById("btn-close-auth-modal").addEventListener("click", closeAuthModal);
-      document.getElementById("btn-cancel-auth").addEventListener("click", closeAuthModal);
-      document.getElementById("btn-cancel-signup").addEventListener("click", closeAuthModal);
-      document.getElementById("tab-auth-login").addEventListener("click", () => switchAuthTab("login"));
-      document.getElementById("tab-auth-signup").addEventListener("click", () => switchAuthTab("signup"));
-      document.getElementById("btn-do-login").addEventListener("click", handleLogin);
-      document.getElementById("btn-do-signup").addEventListener("click", handleSignup);
 
       // Markdown Toolbar Insert
       document.querySelectorAll("#markdown-toolbar .tool-btn").forEach(btn => {
@@ -1461,29 +1782,40 @@
     // Initialization
     window.addEventListener("DOMContentLoaded", async () => {
       loadFromStorage();
+      attachEvents();
 
       if (supabaseClient) {
         try {
           const { data } = await supabaseClient.auth.getSession();
           if (data && data.session) {
             currentUser = data.session.user;
-          }
-          supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            currentUser = session ? session.user : null;
-            updateAuthUI();
-            if (session) {
-              await loadFromSupabase();
-              loadSubject(currentSubject);
+            const savedSessionId = sessionStorage.getItem("devnote_session_id");
+            const savedUsername = sessionStorage.getItem("devnote_username");
+
+            if (savedSessionId && savedUsername) {
+              currentSessionId = savedSessionId;
+              currentUsername = savedUsername;
+
+              // Check if session is still valid (not logged in elsewhere)
+              const { data: sessData } = await supabaseClient
+                .from('user_sessions')
+                .select('session_id')
+                .eq('user_id', currentUser.id)
+                .single();
+
+              if (!sessData || sessData.session_id === currentSessionId) {
+                startSessionMonitoring();
+                await loadFromSupabase();
+                enterWorkspace();
+                return;
+              }
             }
-          });
-        } catch (e) { console.error("Auth Listener Error:", e); }
+          }
+        } catch (e) { console.error("Auth Session Restore Error:", e); }
       }
 
-      updateAuthUI();
-      const loaded = await loadFromSupabase();
-      renderSubjectNav();
-      loadSubject(currentSubject);
-      attachEvents();
+      // Default: Show Landing / Auth Screen
+      showScreen("auth-landing-screen");
     });
   </script>
 </body>
