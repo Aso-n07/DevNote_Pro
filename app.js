@@ -910,6 +910,96 @@ sys.stdout = io.StringIO()
       }
     }
 
+    function exportDictToPDF() {
+      const sub = subjectList.find(s => s.id === currentSubject);
+      const data = appData[currentSubject] || { cards: [] };
+      const allCards = data.cards || [];
+      const searchVal = document.getElementById("search-input")?.value || "";
+      const sortMode = document.getElementById("sort-select")?.value || "latest";
+
+      let entries = allCards.map((card, realIdx) => ({ card, realIdx }));
+
+      if (searchVal.trim()) {
+        const ft = searchVal.trim().toLowerCase();
+        entries = entries.filter(({ card }) =>
+          (card.name && card.name.toLowerCase().includes(ft)) ||
+          (card.desc && card.desc.toLowerCase().includes(ft))
+        );
+      }
+
+      if (sortMode === "latest") {
+        entries.sort((a, b) => {
+          const timeA = a.card.createdAt || (a.realIdx + 1);
+          const timeB = b.card.createdAt || (b.realIdx + 1);
+          return timeB - timeA;
+        });
+      } else if (sortMode === "name") {
+        entries.sort((a, b) => (a.card.name || "").localeCompare(b.card.name || "", 'ko', { sensitivity: 'base' }));
+      } else if (sortMode === "oldest") {
+        entries.sort((a, b) => a.realIdx - b.realIdx);
+      }
+
+      const sortModeNames = {
+        latest: "최신순",
+        name: "이름순 (가나다/ABC)",
+        oldest: "등록순"
+      };
+
+      const element = document.createElement("div");
+      element.style.padding = "20px";
+      element.style.color = "#000000";
+      element.style.backgroundColor = "#ffffff";
+      element.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+      let cardsHtml = "";
+      if (entries.length === 0) {
+        cardsHtml = `<div style="padding: 20px 0; color: #666666; font-size: 1rem;">등록되거나 검색된 핵심 기능 사전 카드가 없습니다.</div>`;
+      } else {
+        entries.forEach(({ card }, idx) => {
+          cardsHtml += `
+            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:14px 18px; margin-bottom:14px; page-break-inside:avoid; break-inside:avoid;">
+              <div style="font-size:1.1rem; font-weight:700; color:#0f172a; margin-bottom:6px;">
+                ${idx + 1}. ${escapeHTML(card.name)}
+              </div>
+              <div style="font-size:0.95rem; color:#334155; line-height:1.5; white-space:pre-wrap; margin-bottom:8px;">
+                ${escapeHTML(card.desc)}
+              </div>
+              ${card.code ? `
+                <div style="background:#1e293b; color:#f8fafc; padding:10px 14px; border-radius:6px; font-family:Consolas, Monaco, monospace; font-size:0.85rem; white-space:pre-wrap; word-break:break-all;">
+                  ${escapeHTML(card.code)}
+                </div>
+              ` : ""}
+            </div>
+          `;
+        });
+      }
+
+      element.innerHTML = `
+        <div style="font-size:1.6rem; font-weight:800; color:#000000; margin-bottom:10px; border-bottom:3px solid #000000; padding-bottom:8px;">
+          DevNote - ${sub ? escapeHTML(sub.name) : '과목'} 핵심기능 사전
+        </div>
+        <div style="font-size:0.85rem; color:#475569; margin-bottom:16px; font-weight:600;">
+          정렬 방식: ${sortModeNames[sortMode] || '최신순'} ${searchVal.trim() ? `| 검색어: "${escapeHTML(searchVal.trim())}"` : ''} | 총 ${entries.length}개 항목
+        </div>
+        <div>${cardsHtml}</div>
+      `;
+
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `${sub ? sub.name : '핵심기능사전'}_사전카드_DevNote.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, logging: false, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      };
+
+      if (window.html2pdf) {
+        html2pdf().set(opt).from(element).save();
+      } else {
+        alert("PDF 라이브러리를 로드할 수 없습니다.");
+      }
+    }
+
     function exportCurrentMarkdownFile() {
       const sub = subjectList.find(s => s.id === currentSubject);
       const data = appData[currentSubject];
@@ -1020,6 +1110,7 @@ sys.stdout = io.StringIO()
 
       document.getElementById("btn-toggle-note-view").addEventListener("click", toggleNoteViewMode);
       document.getElementById("btn-export-pdf").addEventListener("click", exportToPDF);
+      document.getElementById("btn-export-dict-pdf").addEventListener("click", exportDictToPDF);
       document.getElementById("btn-save-data").addEventListener("click", saveCurrentData);
       document.getElementById("btn-run-code").addEventListener("click", executeCurrentCode);
       document.getElementById("btn-clear-code").addEventListener("click", clearCodeRunner);
