@@ -589,17 +589,37 @@
       list.innerHTML = "";
       const data = appData[currentSubject] || { cards: [] };
       const allCards = data.cards || [];
+      const searchVal = (filterText !== undefined && filterText !== "") ? filterText : (document.getElementById("search-input")?.value || "");
+      const sortMode = document.getElementById("sort-select")?.value || "latest";
 
-      let hasMatch = false;
+      let entries = allCards.map((card, realIdx) => ({ card, realIdx }));
 
-      allCards.forEach((c, realIdx) => {
-        const matchesSearch = !filterText || 
-          c.name.toLowerCase().includes(filterText.toLowerCase()) || 
-          c.desc.toLowerCase().includes(filterText.toLowerCase());
+      if (searchVal.trim()) {
+        const ft = searchVal.trim().toLowerCase();
+        entries = entries.filter(({ card }) =>
+          (card.name && card.name.toLowerCase().includes(ft)) ||
+          (card.desc && card.desc.toLowerCase().includes(ft))
+        );
+      }
 
-        if (!matchesSearch) return;
-        hasMatch = true;
+      if (sortMode === "latest") {
+        entries.sort((a, b) => {
+          const timeA = a.card.createdAt || (a.realIdx + 1);
+          const timeB = b.card.createdAt || (b.realIdx + 1);
+          return timeB - timeA;
+        });
+      } else if (sortMode === "name") {
+        entries.sort((a, b) => (a.card.name || "").localeCompare(b.card.name || "", 'ko', { sensitivity: 'base' }));
+      } else if (sortMode === "oldest") {
+        entries.sort((a, b) => a.realIdx - b.realIdx);
+      }
 
+      if (entries.length === 0) {
+        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:20px 0;">등록된 사전에 카드가 없습니다.</div>`;
+        return;
+      }
+
+      entries.forEach(({ card: c, realIdx }) => {
         const div = document.createElement("div");
         div.className = "dict-card";
         div.innerHTML = `
@@ -615,10 +635,6 @@
         `;
         list.appendChild(div);
       });
-
-      if (!hasMatch) {
-        list.innerHTML = `<div style="color:var(--text-muted); font-size:0.8rem; text-align:center; padding:20px 0;">등록된 사전에 카드가 없습니다.</div>`;
-      }
     }
 
     function openCardModal(idx = null) {
@@ -657,9 +673,13 @@
       if (!appData[currentSubject].cards) appData[currentSubject].cards = [];
 
       if (currentEditCardIdx !== null) {
-        appData[currentSubject].cards[currentEditCardIdx] = { name, desc, code };
+        const existing = appData[currentSubject].cards[currentEditCardIdx];
+        appData[currentSubject].cards[currentEditCardIdx] = {
+          name, desc, code,
+          createdAt: existing?.createdAt || Date.now()
+        };
       } else {
-        appData[currentSubject].cards.push({ name, desc, code });
+        appData[currentSubject].cards.push({ name, desc, code, createdAt: Date.now() });
       }
       closeCardModal();
       renderCards();
@@ -1026,6 +1046,7 @@ sys.stdout = io.StringIO()
       document.getElementById("import-file-input").addEventListener("change", importDataJSON);
 
       document.getElementById("search-input").addEventListener("input", (e) => renderCards(e.target.value));
+      document.getElementById("sort-select").addEventListener("change", () => renderCards());
       convertWonToBackslash(document.getElementById("note-input"));
       convertWonToBackslash(document.getElementById("code-editor"));
       convertWonToBackslash(document.getElementById("card-code-input"));
