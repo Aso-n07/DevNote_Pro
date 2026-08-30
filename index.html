@@ -988,7 +988,10 @@ input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .n
       <div class="panel panel-runner" id="panel-runner">
         <div class="panel-header">
           <div class="panel-title"><i class="fa-solid fa-terminal" style="color:var(--success);"></i> 코드 실행 & 시각화</div>
-          <button class="tool-btn" id="btn-run-code" style="background:var(--success); color:#fff;"><i class="fa-solid fa-play"></i> 실행</button>
+          <div class="runner-btn-group" style="display:flex; gap:6px;">
+            <button class="tool-btn" id="btn-clear-code" style="background:var(--bg-card); color:var(--text-sub); border:1px solid var(--border);"><i class="fa-solid fa-rotate-left"></i> 지우기</button>
+            <button class="tool-btn" id="btn-run-code" style="background:var(--success); color:#fff;"><i class="fa-solid fa-play"></i> 실행</button>
+          </div>
         </div>
         <div class="runner-body">
           <textarea id="code-editor" class="code-editor-box" placeholder="실행할 코드를 입력하세요..."></textarea>
@@ -1761,27 +1764,66 @@ input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .n
     }
 
     // Code Execution & Runner
+    function clearCodeRunnerOutputs() {
+      const previewFrame = document.getElementById("web-preview");
+      const diagramView = document.getElementById("diagram-view");
+      const consoleOutput = document.getElementById("console-output");
+
+      if (previewFrame) previewFrame.srcdoc = "";
+      if (diagramView) diagramView.innerHTML = "<p style='color:var(--text-sub); text-align:center; padding:20px;'>시각화 결과가 여기에 표시됩니다.</p>";
+      if (consoleOutput) consoleOutput.innerText = "결과가 여기에 표시됩니다...";
+
+      if (window.pyodideInstance) {
+        try {
+          window.pyodideInstance.runPython(`
+import sys, io
+for name in list(globals().keys()):
+    if not name.startswith('__') and name not in ('sys', 'io'):
+        del globals()[name]
+sys.stdout = io.StringIO()
+          `);
+        } catch(e) {}
+      }
+    }
+
+    function clearCodeRunner() {
+      const codeEditor = document.getElementById("code-editor");
+      if (codeEditor) {
+        codeEditor.value = "";
+        if (appData[currentSubject]) {
+          appData[currentSubject].defaultCode = "";
+          saveCurrentData();
+        }
+      }
+      clearCodeRunnerOutputs();
+    }
+
     function setupRunnerView() {
       const sub = subjectList.find(s => s.id === currentSubject);
       const runnerType = sub ? sub.runnerType : "web";
       const previewFrame = document.getElementById("web-preview");
       const diagramView = document.getElementById("diagram-view");
       const consoleOutput = document.getElementById("console-output");
+      const codeEditor = document.getElementById("code-editor");
+      const code = codeEditor ? codeEditor.value : "";
 
       if (runnerType === "web") {
         previewFrame.style.display = "block";
         diagramView.style.display = "none";
         consoleOutput.style.display = "none";
-        updateWebPreview();
+        if (code.trim()) updateWebPreview();
+        else previewFrame.srcdoc = "";
       } else if (runnerType === "diagram") {
         previewFrame.style.display = "none";
         diagramView.style.display = "block";
         consoleOutput.style.display = "none";
-        renderMermaidDiagram();
+        if (code.trim()) renderMermaidDiagram();
+        else diagramView.innerHTML = "<p style='color:var(--text-sub); text-align:center; padding:20px;'>시각화 결과가 여기에 표시됩니다.</p>";
       } else {
         previewFrame.style.display = "none";
         diagramView.style.display = "none";
         consoleOutput.style.display = "block";
+        consoleOutput.innerText = code.trim() ? "실행 버튼(▶)을 누르면 결과가 표시됩니다." : "결과가 여기에 표시됩니다...";
       }
     }
 
@@ -1797,17 +1839,22 @@ input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .n
       const code = document.getElementById("code-editor").value;
       const frame = document.getElementById("web-preview");
       if (!frame) return;
-      frame.srcdoc = code;
+      frame.srcdoc = code || "<html><body></body></html>";
     }
 
     async function renderMermaidDiagram() {
       const code = document.getElementById("code-editor").value;
       const view = document.getElementById("diagram-view");
       if (!view) return;
+      if (!code.trim()) {
+        view.innerHTML = "<p style='color:var(--text-sub); text-align:center; padding:20px;'>시각화 결과가 여기에 표시됩니다.</p>";
+        return;
+      }
       view.innerHTML = "";
       try {
         if (window.mermaid) {
-          const { svg } = await mermaid.render('mermaid-svg', code);
+          const uniqueId = 'mermaid-svg-' + Date.now();
+          const { svg } = await mermaid.render(uniqueId, code);
           view.innerHTML = svg;
         }
       } catch (e) { view.innerHTML = "<p style='color:#ef4444;'>다이어그램 문법을 확인해주세요.</p>"; }
@@ -1817,13 +1864,25 @@ input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .n
       const code = document.getElementById("code-editor").value;
       const consoleOut = document.getElementById("console-output");
       if (!consoleOut) return;
+
+      if (!code.trim()) {
+        consoleOut.innerText = "실행할 코드가 없습니다. 코드를 입력해주세요.";
+        return;
+      }
+
       consoleOut.innerText = "파이썬 실행 중...";
       try {
         if (!window.pyodideInstance && window.loadPyodide) {
           window.pyodideInstance = await window.loadPyodide();
         }
         if (window.pyodideInstance) {
-          window.pyodideInstance.runPython(`import sys, io; sys.stdout = io.StringIO()`);
+          window.pyodideInstance.runPython(`
+import sys, io
+for name in list(globals().keys()):
+    if not name.startswith('__') and name not in ('sys', 'io'):
+        del globals()[name]
+sys.stdout = io.StringIO()
+          `);
           await window.pyodideInstance.runPythonAsync(code);
           const out = window.pyodideInstance.runPython("sys.stdout.getvalue()");
           consoleOut.innerText = out || "실행 결과가 없습니다.";
@@ -2032,6 +2091,15 @@ input, textarea, select, .form-input, .card-title, .card-desc, .code-snippet, .n
       document.getElementById("btn-export-pdf").addEventListener("click", exportToPDF);
       document.getElementById("btn-save-data").addEventListener("click", saveCurrentData);
       document.getElementById("btn-run-code").addEventListener("click", executeCurrentCode);
+      document.getElementById("btn-clear-code").addEventListener("click", clearCodeRunner);
+      document.getElementById("code-editor").addEventListener("input", (e) => {
+        if (appData[currentSubject]) {
+          appData[currentSubject].defaultCode = e.target.value;
+        }
+        if (!e.target.value.trim()) {
+          clearCodeRunnerOutputs();
+        }
+      });
       document.getElementById("btn-open-card-modal").addEventListener("click", () => openCardModal());
 
       document.getElementById("btn-cancel-subject").addEventListener("click", closeSubjectModal);
