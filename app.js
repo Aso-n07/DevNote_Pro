@@ -707,10 +707,15 @@
       if (window.pyodideInstance) {
         try {
           window.pyodideInstance.runPython(`
-import sys, io
-for name in list(globals().keys()):
-    if not name.startswith('__') and name not in ('sys', 'io'):
-        del globals()[name]
+import sys, io, builtins
+g = builtins.globals()
+for name in builtins.list(g.keys()):
+    if not name.startswith('__') and name not in ('sys', 'io', 'builtins', 'g'):
+        try:
+            del g[name]
+        except Exception:
+            pass
+del g
 sys.stdout = io.StringIO()
           `);
         } catch(e) {}
@@ -808,10 +813,15 @@ sys.stdout = io.StringIO()
         }
         if (window.pyodideInstance) {
           window.pyodideInstance.runPython(`
-import sys, io
-for name in list(globals().keys()):
-    if not name.startswith('__') and name not in ('sys', 'io'):
-        del globals()[name]
+import sys, io, builtins
+g = builtins.globals()
+for name in builtins.list(g.keys()):
+    if not name.startswith('__') and name not in ('sys', 'io', 'builtins', 'g'):
+        try:
+            del g[name]
+        except Exception:
+            pass
+del g
 sys.stdout = io.StringIO()
           `);
           await window.pyodideInstance.runPythonAsync(code);
